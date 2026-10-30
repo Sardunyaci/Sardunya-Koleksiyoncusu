@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sardunya Koleksiyoncusu | Yönetim Paneli</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#173c31;background:#f2f7f3}*{box-sizing:border-box}body{margin:0}header{background:#075d48;color:white;padding:22px 5%;display:flex;align-items:center;justify-content:space-between;gap:16px}h1{font-size:23px;margin:0}main{max-width:1080px;margin:32px auto;padding:0 18px}.card{background:white;padding:26px;border-radius:16px;box-shadow:0 8px 24px #164a3220;margin-bottom:22px}label{display:block;margin:12px 0 5px;font-weight:bold}input,textarea,select{font:inherit;padding:12px;border:1px solid #b9cbc1;border-radius:8px;width:100%}button{border:0;border-radius:9px;background:#087456;color:white;padding:12px 18px;cursor:pointer;font-weight:bold}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#dce9e2;color:#154e3d}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.muted{color:#61746a}.hidden{display:none}.item{border:1px solid #d9e7de;padding:15px;border-radius:12px}.item img{width:100%;height:180px;object-fit:cover;border-radius:8px}.badge{display:inline-block;background:#e3f1e9;padding:5px 9px;border-radius:15px;font-size:12px}#status{white-space:pre-wrap}a{color:inherit}small{line-height:1.5}
+</style>
+</head>
+<body>
+<header><h1>🌺 Sardunya Koleksiyoncusu · Yönetim</h1><button id="logout" class="secondary hidden">Çıkış yap</button></header>
+<main>
+<section id="loginBox" class="card"><h2>Yönetici girişi</h2><p class="muted">Supabase'de oluşturduğun yönetici hesabıyla giriş yap.</p><form id="loginForm"><label>E-posta</label><input id="email" type="email" autocomplete="username" required><label>Şifre</label><input id="password" type="password" autocomplete="current-password" required><p><button type="submit">Giriş yap</button></p></form></section>
+<section id="panel" class="hidden"><div class="card"><h2>Ürün yönetimi</h2><p id="welcome" class="muted"></p><p class="muted">Bu panel Supabase veritabanındaki ürünleri yönetir. Mevcut GitHub kataloğuna otomatik müdahale etmez.</p><div class="row"><button id="refresh" class="secondary">Ürünleri yenile</button><span id="count" class="badge"></span></div></div>
+<div class="card"><h2>Yeni ürün ekle</h2><form id="productForm"><div class="grid"><div><label>Çeşit adı</label><input id="name" required maxlength="180" placeholder="Örn. LiA Freya"></div><div><label>Ürün kodu</label><input id="code" placeholder="Örn. 1243"></div><div><label>Fiyat (TL)</label><input id="price" type="number" min="0" step="0.01" placeholder="İsteğe bağlı"></div><div><label>Stok durumu</label><select id="stock"><option value="stokta">Stokta</option><option value="nisan_2027">Nisan 2027 Kataloğa girilecek</option></select></div></div><label>Açıklama</label><textarea id="description" rows="3"></textarea><p><button type="submit">Ürünü kaydet</button></p></form><small class="muted">Ürün, varsa onay sistemine göre beklemede kalabilir. Fotoğraf yükleme özelliğini tablo yapısını doğruladıktan sonra ekleyeceğiz.</small></div>
+<div class="card"><h2>Supabase ürünleri</h2><div id="items" class="grid"></div></div></section>
+<div id="status" role="status" class="card muted">Bağlantı hazırlanıyor…</div>
+</main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL='https://qhhvhuomfqhkrvcwxwgp.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_0xXY9QFQdcpqFeBpYhthvw_aa2_Vene';
+const db=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const el=id=>document.getElementById(id);let currentUser=null;
+const status=(msg,error=false)=>{el('status').textContent=msg;el('status').style.color=error?'#a72d2d':'#61746a'};
+async function checkAdmin(user){if(!user)return false;const {data,error}=await db.from('profiles').select('role').eq('id',user.id).single();if(error){status('Yetki kontrolü başarısız: '+error.message,true);return false}return data?.role==='admin'}
+async function renderSession(){const {data:{user},error}=await db.auth.getUser();if(error){status(error.message,true)}currentUser=user;const admin=await checkAdmin(user);el('loginBox').classList.toggle('hidden',!!user);el('panel').classList.toggle('hidden',!admin);el('logout').classList.toggle('hidden',!user);if(user&&!admin){status('Bu hesap yönetici olarak yetkilendirilmemiş. Yönetici rolünü Supabase profiles tablosundan kontrol et.',true);return}if(admin){el('welcome').textContent='Giriş yapan: '+user.email;status('Yönetici girişi başarılı.');await loadProducts()}else if(!user){status('Giriş yapmak için e-posta ve şifreni yaz.')}}
+el('loginForm').addEventListener('submit',async e=>{e.preventDefault();status('Giriş yapılıyor…');const {error}=await db.auth.signInWithPassword({email:el('email').value.trim(),password:el('password').value});if(error){status('Giriş hatası: '+error.message,true);return}el('password').value='';await renderSession()});
+el('logout').addEventListener('click',async()=>{await db.auth.signOut();await renderSession()});
+function safeText(v){return v==null?'':String(v)}
+async function loadProducts(){const {data,error}=await db.from('products').select('*').order('created_at',{ascending:false});if(error){status('Ürünler alınamadı: '+error.message,true);return}el('count').textContent=(data?.length||0)+' ürün';el('items').replaceChildren();if(!data?.length){el('items').textContent='Supabase veritabanında henüz ürün yok. GitHub kataloğundaki 27 ürün ayrı olarak duruyor.';return}for(const p of data){const card=document.createElement('div');card.className='item';const title=document.createElement('h3');title.textContent=safeText(p.name||p.title||'İsimsiz ürün');card.append(title);const detail=document.createElement('p');detail.className='muted';detail.textContent='Kod: '+safeText(p.code||p.product_code||'—')+' · Durum: '+safeText(p.approval_status||'—');card.append(detail);const btn=document.createElement('button');btn.className='secondary';btn.textContent='Ayrıntılar';btn.addEventListener('click',()=>alert(JSON.stringify(p,null,2)));card.append(btn);el('items').append(card)}}
+el('refresh').addEventListener('click',loadProducts);
+el('productForm').addEventListener('submit',async e=>{e.preventDefault();if(!currentUser||!(await checkAdmin(currentUser))){status('Yönetici yetkisi gerekli.',true);return}const name=el('name').value.trim(),code=el('code').value.trim(),price=el('price').value;const payload={name,approval_status:'pending'};if(code)payload.code=code;if(price)payload.price=Number(price);const description=el('description').value.trim();if(description)payload.description=description;status('Ürün kaydediliyor…');const {error}=await db.from('products').insert(payload);if(error){status('Ürün kaydedilemedi. Tablo sütunları uyumlu olmayabilir: '+error.message,true);return}status('Ürün kaydedildi.');el('productForm').reset();await loadProducts()});
+renderSession().catch(err=>status('Bağlantı hatası: '+err.message,true));
+</script>
+</body></html>

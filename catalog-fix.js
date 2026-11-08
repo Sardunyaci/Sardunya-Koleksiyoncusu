@@ -7,9 +7,13 @@
       await wait(250);
     }
     if (typeof data === 'undefined' || typeof sbUrl === 'undefined' || typeof sbKey === 'undefined' || typeof render !== 'function') return;
-    await wait(1500);
-    const rows=data.filter(p=>p.fromSupabase);
-    if (!rows.length) return;
+let rows = [];
+for (let i = 0; i < 80; i++) {
+  rows = data.filter(p => p.fromSupabase);
+  if (rows.length) break;
+  await wait(250);
+}
+if (!rows.length) return;
     const headers={apikey:sbKey,Authorization:'Bearer '+sbKey};
     const productsResponse=await fetch(sbUrl+'/rest/v1/products?select=id,product_code&approval_status=eq.approved&limit=1000',{headers});
     if(!productsResponse.ok)return;

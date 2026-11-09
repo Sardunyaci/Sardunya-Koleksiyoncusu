@@ -10,6 +10,8 @@ const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seed
 const descriptions={cutting:'Köklendirme gerektiren çelik. Boyut, yaprak sayısı ve stok bilgisi satıcı tarafından doğrulanmalıdır.',seedling:'Genç, köklenmiş bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.',mother:'Gelişmiş anaç bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.'};
 let selected='cutting',photo=0,productName='',productCode='',generalCover=null;
 const el=id=>document.getElementById(id);
+// Kapak gorselleri ana katalogdaki mevcut 27 cesit ile eslesir. Eksik urun-formu fotograflari yerine sadece genel cicek fotografi gosterilir.
+const catalogCovers={"10":"https://images.prom.ua/1932751504_pelargoniya-zonalna-bold.jpg","31":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_31/red_pandora1.jpg","33":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_33/galina-33-1.jpg","34":"https://images.prom.ua/6620857703_yuv-elbrus-34.jpg","35":"https://images.prom.ua/1933486320_pelargoniya-tamara-geran.jpg","38":"https://images.prom.ua/6395593527_iv-maja-pliska.jpg","49":"https://images.prom.ua/7425435565_md-lyubochka-.jpg","81":"https://images.prom.ua/1934279425_pelargoniya-good-vibration.jpg","82":"https://images.prom.ua/6450625216_ta-emmanuel-82.jpg","94":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_94/ShYK_Grand_Prix.jpg","105":"https://images.prom.ua/6758569505_diaz-madrugada-105.jpg","110":"https://images.prom.ua/6758327919_by-karalovij-rif.jpg","121":"https://images.prom.ua/6574379756_nika-esmeralda-121.jpg","125":"https://images.prom.ua/6454369016_diaz-faramira-125.jpg","147":"https://images.prom.ua/6758153050_lara-delight-147.jpg","149":"https://images.prom.ua/7341982570_sim-praline-149.jpg","150":"https://images.prom.ua/7341902277_sim-harizma-150.jpg","154":"https://images.prom.ua/7601883615_ts-maya-154.jpg","192":"https://images.prom.ua/2697729416_odensjo-madame-bovary.jpg","194":"https://images.prom.ua/3612069060_194-yuv-bila.jpg","250":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_250/jogerhus_1.jpg","251":"https://images.prom.ua/3097729969_yug-printsesa-grejs.jpg","254":"https://images.prom.ua/3109433705_och-madpearl-white.jpg","264":"https://images.prom.ua/3615677864_pelargoniya-svit-orha.jpg","270":"https://images.prom.ua/6758333968_270-yu-nastasya.jpg","1243":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1243/1243-26.jpg","1704":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1704/1704-25.jpg"};
 const phone='905322606088';
 let currentReady=false,currentPrice=null;
 function updateContacts(ready,price){
@@ -73,6 +75,8 @@ el('close').onclick=()=>{el('overlay').classList.remove('open');el('media').repl
 async function init(){
 const params=new URLSearchParams(location.search);const code=params.get('code');const name=params.get('name');
 const cover=params.get('cover');if(cover&&cover.length<1800&&/^(https?:\/\/|images\/)/i.test(cover)){generalCover=cover;}
+// Yonetim panelinden acilan linklerde cover parametresi yoktur; koddan katalog fotografini bul.
+if(!generalCover&&code&&catalogCovers[String(code).trim()])generalCover=catalogCovers[String(code).trim()];
 if(!code&&!name){el('product-name').textContent='Ürün seçilmedi';draw();return;}
 productCode=code||'';productName=name||'Sardunya çeşidi';
 const headers={apikey:sbKey,Authorization:'Bearer '+sbKey};
@@ -82,6 +86,7 @@ const response=await fetch(sbUrl+'/rest/v1/products?select=*&approval_status=eq.
 if(!response.ok)throw Error('Ürün bilgisi yüklenemedi');
 const rows=await response.json();const p=rows[0];
 if(p){productName=p.name||productName;productCode=String(p.product_code||productCode);
+if(!generalCover&&catalogCovers[productCode])generalCover=catalogCovers[productCode];
 const mr=await fetch(sbUrl+'/rest/v1/product_variant_media?select=variant_type,media_type,media_url&product_id=eq.'+encodeURIComponent(p.id)+'&limit=2000',{headers});
 if(mr.ok){const media=await mr.json();for(const m of media){const type=({cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'})[String(m.variant_type||'').toLocaleLowerCase('tr')];if(!type||!m.media_url)continue;if(m.media_type==='image'&&!types[type].images.includes(m.media_url))types[type].images.push(m.media_url);if(m.media_type==='video'&&!types[type].video)types[type].video=m.media_url;}}
 const desc=p.description||p.product_description;

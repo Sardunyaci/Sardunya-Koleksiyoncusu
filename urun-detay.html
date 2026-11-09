@@ -37,7 +37,7 @@ el('video').onclick=()=>{const v=document.createElement('video');v.src=types[sel
 el('close').onclick=()=>{el('overlay').classList.remove('open');el('media').replaceChildren()};
 async function init(){
 const params=new URLSearchParams(location.search);const code=params.get('code');const name=params.get('name');
-const cover=params.get('cover');if(cover&&/^https?:\/\//i.test(cover)&&cover.length<1800){el('general-img').src=cover;el('general-photo').hidden=false;el('general-img').onerror=()=>el('general-photo').hidden=true;}
+const cover=params.get('cover');if(cover&&cover.length<1800&&/^(https?:\/\/|images\/)/i.test(cover)){el('general-img').src=cover;el('general-photo').hidden=false;el('general-img').onerror=()=>el('general-photo').hidden=true;}
 if(!code&&!name){el('product-name').textContent='Ürün seçilmedi';draw();return;}
 productCode=code||'';productName=name||'Sardunya çeşidi';
 const headers={apikey:sbKey,Authorization:'Bearer '+sbKey};

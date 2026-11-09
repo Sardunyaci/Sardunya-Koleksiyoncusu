@@ -190,13 +190,13 @@ const current=new Set(list.map(p=>String(p.product_code||'').trim().toLocaleLowe
 const missing=original.filter(p=>!current.has(String(p.code).toLocaleLowerCase('tr')));
 if(!missing.length){message('Eski katalogdaki bütün çeşitler zaten Supabase listesinde.');return;}
 if(!confirm('Eski katalogdaki '+missing.length+' eksik çeşidi Supabase ürünlerine eklemek istiyor musun? Mevcut ürünler ve medya silinmeyecek.'))return;
-let added=0;const fail=[];
-for(const p of missing){
- const q=await db.from('products').insert({name:p.name,product_code:String(p.code),approval_status:'approved'}).select('id');
- if(q.error)fail.push(p.name+': '+q.error.message);else if(q.data?.length)added++;
-}
+const rows=missing.map(p=>({name:p.name,product_code:String(p.code),approval_status:'approved'}));
+const q=await db.from('products').insert(rows).select('id,product_code');
+if(q.error)throw Error('Toplu ürün ekleme başarısız; veriler değiştirilmedi: '+q.error.message);
+const added=q.data?.length||0;
+if(added!==rows.length)throw Error('Toplu işlem tamamlandı ancak yalnızca '+added+' / '+rows.length+' kayıt doğrulanabildi. Listeyi yenileyerek kontrol et.');
 await loadProducts();
-message(added+' eksik katalog ürünü eklendi.'+(fail.length?' Eklenemeyenler: '+fail.join(' | '):''),!!fail.length);
+message(added+' eski katalog ürünü tek işlemde eklendi ve doğrulandı. Hiçbir satış formu otomatik açılmadı.');
 }
 $('login-form').addEventListener('submit',async e=>{e.preventDefault();const r=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('password').value='';if(r.error){message(r.error.message,true);return;}await session()});
 $('product').addEventListener('change',()=>chooseProduct().catch(e=>message(e.message,true)));

@@ -6,7 +6,7 @@ const sbUrl='https://qhhvhuomfqhkrvcwxwgp.supabase.co',sbKey='sb_publishable_0xX
 const knownRoot=sbUrl+'/storage/v1/object/public/product-images/variants/5435f3a7-bed1-43c3-9b34-110f1dff0201/cutting/';
 const knownPhotos=['90157370-e298-48df-ad6a-a5ba5756873c.jpg','9a9719b8-d271-4226-833b-75b508d3fd80.jpg','dd01b9b2-b160-47fb-91f1-7302547b2827.jpg'].map(f=>knownRoot+f);
 const types={cutting:{name:'Çelik (Köklendirilmemiş)',images:[],video:null},seedling:{name:'Fide (Genç Bitki)',images:[],video:null},mother:{name:'Anaç (Yetişkin Bitki)',images:[],video:null}};
-const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'};let formDescriptions={};let variants={};let formWarnings={};
+const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'};let formDescriptions={};let variants={};let formWarnings={};let publishedVariants={};
 const descriptions={cutting:'Köklendirme gerektiren çelik. Boyut, yaprak sayısı ve stok bilgisi satıcı tarafından doğrulanmalıdır.',seedling:'Genç, köklenmiş bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.',mother:'Gelişmiş anaç bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.'};
 let selected='cutting',photo=0,productName='',productCode='',generalCover=null;
 let coverCandidates=[],failedCovers=new Set(),failedFormPhotos=new Set();
@@ -93,7 +93,7 @@ productCode=code||'';productName=name||'Sardunya çeşidi';
 const headers={apikey:sbKey,Authorization:'Bearer '+sbKey};
 try{
 const filter=code?'product_code=eq.'+encodeURIComponent(code):'name=eq.'+encodeURIComponent(name);
-const response=await fetch(sbUrl+'/rest/v1/products?select=*&approval_status=eq.approved&'+filter+'&limit=1',{headers});
+const response=await fetch(sbUrl+'/rest/v1/products?select=*&approval_status=eq.approved&'+filter+'&limit=1',{headers,cache:'no-store'});
 if(!response.ok)throw Error('Ürün bilgisi yüklenemedi');
 const rows=await response.json();const p=rows[0];
 if(p){productName=p.name||productName;productCode=String(p.product_code||productCode);
@@ -107,11 +107,11 @@ if(gi&&gi.ok){try{const photos=await gi.json();addCovers(photos.map(x=>x.image_u
 if(mr&&mr.ok){const media=await mr.json();for(const m of media){const type=({cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'})[String(m.variant_type||'').toLocaleLowerCase('tr')];if(!type||!m.media_url)continue;if(m.media_type==='image'&&!types[type].images.includes(m.media_url))types[type].images.push(m.media_url);if(m.media_type==='video'&&!types[type].video)types[type].video=m.media_url;}}
 const desc=p.description||p.product_description;
 if(typeof desc==='string'&&desc.trim()){
- if(desc.startsWith('@SK1@')){try{const d=JSON.parse(desc.slice(5));el('product-description').textContent=d.general||'Genel açıklama henüz eklenmedi.';formDescriptions=d.forms||{};}catch{el('product-description').textContent='Açıklama okunamadı; yönetim panelinden kontrol edilmeli.';}}
+ if(desc.startsWith('@SK1@')){try{const d=JSON.parse(desc.slice(5));el('product-description').textContent=d.general||'Genel açıklama henüz eklenmedi.';formDescriptions=d.forms||{};publishedVariants=d.publicVariants||{};}catch{el('product-description').textContent='Açıklama okunamadı; yönetim panelinden kontrol edilmeli.';}}
  else el('product-description').textContent=desc;
 }
-const vr=await fetch(sbUrl+'/rest/v1/product_variants?select=*&product_id=eq.'+encodeURIComponent(p.id)+'&limit=1000',{headers});
-if(vr.ok){const rows=await vr.json();for(const key of Object.keys(types)){const matches=rows.filter(r=>alias[String(r.variant_type||'').toLocaleLowerCase('tr') ]===key);
+const vr=await fetch(sbUrl+'/rest/v1/product_variants?select=*&product_id=eq.'+encodeURIComponent(p.id)+'&limit=1000',{headers,cache:'no-store'}).catch(()=>null);
+if(vr&&vr.ok){const rows=await vr.json();for(const key of Object.keys(types)){const matches=rows.filter(r=>alias[String(r.variant_type||'').toLocaleLowerCase('tr') ]===key);
 if(matches.length){
 const normalized=matches.map(row=>({
 price:row.price_tl??row.price??null,stock:row.stock_quantity??row.stock??null,available:row.is_available===true,sale:row.on_sale===true,
@@ -120,7 +120,19 @@ const first=normalized[0];
 const consistent=normalized.every(r=>!r.inconsistent&&r.price===first.price&&r.stock===first.stock&&r.available===first.available&&r.sale===first.sale);
 if(consistent)variants[key]=matches[0];else formWarnings[key]=true;
 }
-}}else console.warn('Varyant bilgileri okunamadı:',vr.status);
+}}else console.warn('Genel erisime acik varyant listesi okunamadi:',vr?.status||'baglanti hatasi');
+// Supabase anon SELECT yetkisi yoksa, yoneticinin veritabanindan dogrulayip
+// onayli urun aciklamasina yayimladigi kopyayi kullan. Sahte fiyat/stok uretme.
+for(const key of Object.keys(types)){
+ if(variants[key]||formWarnings[key])continue;
+ const row=publishedVariants[key];
+ if(!row||typeof row!=='object')continue;
+ const pval=row.price_tl,qty=row.stock_quantity;
+ const okPrice=pval===null||(typeof pval==='number'&&Number.isFinite(pval)&&pval>=0);
+ const okQty=qty===null||(Number.isInteger(qty)&&qty>=0);
+ if(!okPrice||!okQty)continue;
+ variants[key]={price_tl:pval,stock_quantity:qty,is_available:row.is_available===true,on_sale:row.on_sale===true};
+}
 
 }
 }catch(e){console.warn(e);}

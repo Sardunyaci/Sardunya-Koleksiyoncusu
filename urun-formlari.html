@@ -19,12 +19,23 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 .media{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.media-item{border:1px solid #d3e2d9;padding:9px;border-radius:10px;overflow-wrap:anywhere}.media-item img,.media-item video{width:100%;height:130px;object-fit:cover;border-radius:7px;background:#eef2ef}
 .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}hr{border:0;border-top:1px solid #e1eae4;margin:24px 0}
 @media(max-width:750px){.grid{grid-template-columns:1fr}.tabs button{font-size:14px;padding:9px 4px}header{font-size:14px}.card{padding:16px}}
+.sk-quick{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,.6fr);align-items:center;gap:18px;padding:16px;margin:17px 0;border:1px solid #cbdfd2;background:#f7faf7;border-radius:14px}
+.sk-quick-photo{aspect-ratio:4/3;max-height:410px;min-height:220px;width:100%;background:#e9f0e9;border-radius:12px;overflow:hidden;display:grid;place-items:center}
+.sk-quick-photo img{height:100%;width:100%;object-fit:cover;object-position:center;display:block}
+.sk-quick-info h3{font-size:29px;line-height:1.2;margin:0 0 10px}.sk-quick-info p{overflow-wrap:anywhere}
+.sk-quick-info a{margin-top:12px}.sk-quick-empty{text-align:center;padding:20px;color:#597269}
+@media(max-width:750px){.sk-quick{grid-template-columns:1fr;padding:12px}.sk-quick-photo{min-height:160px;max-height:none}}
 </style><style id="sk-home-button-style">.sk-home-button{position:fixed;right:18px;bottom:18px;z-index:9999;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 19px;border-radius:999px;background:#0a6244;color:#fff!important;font:700 15px Arial,Helvetica,sans-serif;text-decoration:none!important;box-shadow:0 6px 24px #0004;border:2px solid #fff;line-height:1.2}.sk-home-button:hover,.sk-home-button:focus{background:#074a34;outline:2px solid #d5eadc;outline-offset:2px}@media(max-width:520px){.sk-home-button{bottom:12px;right:12px;padding:12px 15px;font-size:14px}}</style></head><body><div id="sk-home-topbar" style="display:flex;justify-content:flex-end;align-items:center;padding:10px 18px;background:#f5faf6;border-bottom:1px solid #d0e4d5;position:relative;z-index:10000"><a href="./index.html" aria-label="Ana Sayfaya Dön" style="display:inline-block;background:#0a6244;color:#fff;text-decoration:none;font:700 15px Arial,Helvetica,sans-serif;padding:12px 20px;border-radius:9px;box-shadow:0 2px 12px #0002">⌂ Ana Sayfaya Dön</a></div><a class="sk-home-button" href="./index.html" aria-label="Ana Sayfaya Dön">⌂ Ana Sayfaya Dön</a>
 <header><a href="./index.html"><strong>🌺 Sardunya Koleksiyoncusu</strong></a><nav><a href="./admin.html">← Yönetim paneli</a></nav></header>
 <main><section class="card"><h1>Ürün Formları Yönetimi</h1><p class="muted">Tüm katalog çeşitleri için Çelik, Fide ve Anaç fotoğrafı, videosu, fiyatı, stok miktarı ve açıklamasını ayrı ayrı yönet.</p><div class="notice warn">Satış otomatik açılmaz. Çift kayıtlar silinmez veya rastgele birleştirilmez. Eski fotoğraflar korunur.</div></section>
 <section class="card" id="login-box"><h2>Yönetici girişi</h2><form id="login-form"><label>E-posta</label><input id="email" type="email" required autocomplete="username"><label>Şifre</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Giriş yap</button></p></form></section>
 <div id="panel" class="hidden">
 <section class="card"><h2>Ürün Seçimi</h2><div class="grid"><div><label>Ürün ara</label><input id="filter" placeholder="Çeşit adı veya kod"></div><div><label>Ürün</label><select id="product"><option value="">Ürün seçiniz…</option></select></div></div>
+<div class="sk-quick hidden" id="quicklook" aria-live="polite">
+<div class="sk-quick-photo"><img id="quick-photo" class="hidden" alt="Seçilen çeşidin fotoğrafı"><span class="sk-quick-empty" id="quick-empty">Fotoğraf aranıyor…</span></div>
+<div class="sk-quick-info"><h3 id="quick-name">Ürün</h3><p id="quick-code" class="muted"></p><p id="quick-status">Fotoğraf aranıyor…</p>
+<a id="quick-link" class="button secondary hidden" target="_blank" rel="noopener noreferrer">Fotoğrafı tam boy aç</a>
+<p class="muted small">Bu fotoğraf çeşidin genel görünümüdür; gönderilecek Çelik, Fide veya Anaç bitkisinin fotoğrafı olmayabilir.</p></div></div>
 <p class="row"><button id="reload" class="secondary" type="button">Listeyi yenile</button><button id="import" class="secondary" type="button">Eski katalogdaki eksik ürünleri ekle</button><button id="logout" class="secondary" type="button">Çıkış yap</button></p>
 <p class="muted small">Eski katalogdaki 27 çeşit hâlâ ana sayfada görünür. Yönetmek istediğin çeşit Supabase'de yoksa “eksik ürünleri ekle” ile kaydedebilirsin. Mevcut kayıtlar tekrar oluşturulmaz.</p></section>
 <section id="editor" class="hidden">
@@ -51,22 +62,46 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
 const url='https://qhhvhuomfqhkrvcwxwgp.supabase.co';
 const key='sb_publishable_0xXY9QFQdcpqFeBpYhthvw_aa2_Vene';
 const db=createClient(url,key);
+const catalogCovers={"10":"https://images.prom.ua/1932751504_pelargoniya-zonalna-bold.jpg","31":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_31/red_pandora1.jpg","33":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_33/galina-33-1.jpg","34":"https://images.prom.ua/6620857703_yuv-elbrus-34.jpg","35":"https://images.prom.ua/1933486320_pelargoniya-tamara-geran.jpg","38":"https://images.prom.ua/6395593527_iv-maja-pliska.jpg","49":"https://images.prom.ua/7425435565_md-lyubochka-.jpg","81":"https://images.prom.ua/1934279425_pelargoniya-good-vibration.jpg","82":"https://images.prom.ua/6450625216_ta-emmanuel-82.jpg","94":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_94/ShYK_Grand_Prix.jpg","105":"https://images.prom.ua/6758569505_diaz-madrugada-105.jpg","110":"https://images.prom.ua/6758327919_by-karalovij-rif.jpg","121":"https://images.prom.ua/6574379756_nika-esmeralda-121.jpg","125":"https://images.prom.ua/6454369016_diaz-faramira-125.jpg","147":"https://images.prom.ua/6758153050_lara-delight-147.jpg","149":"https://images.prom.ua/7341982570_sim-praline-149.jpg","150":"https://images.prom.ua/7341902277_sim-harizma-150.jpg","154":"https://images.prom.ua/7601883615_ts-maya-154.jpg","192":"https://images.prom.ua/2697729416_odensjo-madame-bovary.jpg","194":"https://images.prom.ua/3612069060_194-yuv-bila.jpg","250":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_250/jogerhus_1.jpg","251":"https://images.prom.ua/3097729969_yug-printsesa-grejs.jpg","254":"https://images.prom.ua/3109433705_och-madpearl-white.jpg","264":"https://images.prom.ua/3615677864_pelargoniya-svit-orha.jpg","270":"https://images.prom.ua/6758333968_270-yu-nastasya.jpg","1243":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1243/1243-26.jpg","1704":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1704/1704-25.jpg"};
 const original=[{"name":"YuV Elbrus","code":"34"},{"name":"SiM Charisma","code":"150"},{"name":"SiM Praline","code":"149"},{"name":"TS Maya","code":"154"},{"name":"DiaZ Madrugada","code":"105"},{"name":"Good Vibration","code":"81"},{"name":"Bold Diamond Wedding","code":"10"},{"name":"Tamara","code":"35"},{"name":"IV Maya Plisetskaya","code":"38"},{"name":"Red Pandora","code":"31"},{"name":"Odensjo Madame Bovary","code":"192"},{"name":"Jagershus Borre","code":"250"},{"name":"OCh Madpearl White","code":"254"},{"name":"Sweet Orha","code":"264"},{"name":"YuG Princess Grace","code":"251"},{"name":"TA Emmanuel","code":"82"},{"name":"BY Coral Reef","code":"110"},{"name":"DiaZ Faramira","code":"125"},{"name":"ShiK Grand Prix","code":"94"},{"name":"Nika Esmeralda","code":"121"},{"name":"Lara Delight","code":"147"},{"name":"MD Lyubochka","code":"49"},{"name":"Yu Nastasya Filippovna","code":"270"},{"name":"YuV White Magic","code":"194"},{"name":"LiA Eteriya","code":"1704"},{"name":"LiA Freya","code":"1243"},{"name":"IV Galina Ulanova","code":"33"}];
 const $=id=>document.getElementById(id);
 const labels={cutting:'Çelik',seedling:'Fide',mother:'Anaç'};
 const alias={cutting:'cutting','çelik':'cutting',celik:'cutting',seedling:'seedling',fide:'seedling',mother:'mother','anaç':'mother',anac:'mother'};
 const types=['cutting','seedling','mother'];
 let list=[],selected=null,selectedType='cutting',variantRows=[],mediaRows=[],desc={general:'',forms:{}};
+let selectionToken=0;
 const message=(str,bad=false)=>{const n=$('status');n.textContent=str;n.className='card notice'+(bad?' err':'')};
 const assertAdmin=async()=>{const u=await db.auth.getUser();if(u.error||!u.data.user)throw Error('Yönetici girişi gerekli.');const q=await db.from('profiles').select('role').eq('id',u.data.user.id).single();if(q.error||q.data?.role!=='admin')throw Error('Yönetici yetkisi bulunamadı.');return u.data.user};
 async function session(){try{await assertAdmin();$('login-box').classList.add('hidden');$('panel').classList.remove('hidden');await loadProducts()}catch(e){$('login-box').classList.remove('hidden');$('panel').classList.add('hidden');message(e.message,true)}}
 async function loadProducts(){await assertAdmin();const r=await db.from('products').select('*').order('name',{ascending:true}).limit(1000);if(r.error)throw r.error;list=r.data||[];filterProducts();message(list.length+' ürün yönetim paneline yüklendi.');}
 function filterProducts(){
-const chosen=$('product').value||selected?.id||'';
-const filter=$('filter').value.toLocaleLowerCase('tr');
-$('product').replaceChildren(new Option('Ürün seçiniz…',''));
-for(const p of list){if(!((p.name||'')+' '+(p.product_code||'')).toLocaleLowerCase('tr').includes(filter))continue;$('product').add(new Option((p.name||'İsimsiz')+' · '+(p.product_code||'Kod yok'),p.id));}
-if([...$('product').options].some(x=>x.value===chosen))$('product').value=chosen;
+ const val=$('filter').value.trim().toLocaleLowerCase('tr'),dropdown=$('product');
+ const matches=list.filter(p=>((p.name||'')+' '+(p.product_code||'')).toLocaleLowerCase('tr').includes(val));
+ const chosen=dropdown.value||selected?.id||'';
+ dropdown.replaceChildren(new Option('Ürün seçiniz…',''));
+ for(const p of matches)dropdown.add(new Option((p.name||'İsimsiz')+' · '+(p.product_code||'Kod yok'),p.id));
+ const exact=val?matches.find(p=>String(p.product_code||'').trim().toLocaleLowerCase('tr')===val):null;
+ const auto=val?(exact||(matches.length===1?matches[0]:null)):null;
+ dropdown.value=auto?.id||(matches.some(p=>p.id===chosen)?chosen:'');
+ if(auto&&selected?.id!==auto.id){chooseProduct().catch(e=>message('Ürün seçimi hatası: '+e.message,true))}
+ else if(val&&!matches.length){selectionToken++;selected=null;$('editor').classList.add('hidden');$('quicklook').classList.add('hidden')}
+}
+function renderQuicklook(p,uploaded=[],media=[]){
+ const id=String(p.product_code||'').trim(),photos=[];
+ const valid=u=>typeof u==='string'&&u.length<1800&&(u.startsWith('https://')||u.startsWith('http://')||u.startsWith('images/'));
+ const add=u=>{if(valid(u)&&!photos.includes(u))photos.push(u)};
+ // Genel galeri varsa önce onu, sonra özgün katalog fotoğrafını göster.
+ for(const x of uploaded)add(x.image_url);
+ add(catalogCovers[id]);
+ for(const x of media)if(x.media_type==='image')add(x.media_url);
+ const pic=$('quick-photo'),empty=$('quick-empty'),link=$('quick-link'),status=$('quick-status');
+ $('quicklook').classList.remove('hidden');$('quick-name').textContent=p.name||'Ürün';$('quick-code').textContent='Kod: '+id;
+ let pos=0;function next(){
+  if(pos>=photos.length){pic.classList.add('hidden');pic.removeAttribute('src');empty.classList.remove('hidden');empty.textContent='Fotoğraf bulunamadı';link.classList.add('hidden');link.removeAttribute('href');status.textContent='Bu çeşide ait fotoğraf yüklenmemiş.';return}
+  const url=photos[pos++];pic.onerror=next;pic.src=url;pic.classList.remove('hidden');empty.classList.add('hidden');
+  link.href=url;link.classList.remove('hidden');status.textContent='Ürün görseli otomatik gösteriliyor.';
+ }
+ next();
 }
 function readDescription(p){
 const raw=p.description||p.product_description||'';
@@ -101,17 +136,25 @@ if(!media.length){$('media-gallery').textContent='Bu forma henüz fotoğraf veya
 for(const m of media){const box=document.createElement('div');box.className='media-item';const view=document.createElement(m.media_type==='video'?'video':'img');view.src=m.media_url;if(m.media_type==='video')view.controls=true;else view.loading='lazy';box.append(view);const a=document.createElement('a');a.href=m.media_url;a.target='_blank';a.rel='noopener';a.textContent=m.media_type==='video'?'Videoyu aç':'Fotoğrafı aç';box.append(a);$('media-gallery').append(box);}
 }
 async function chooseProduct(){
-const id=$('product').value;selected=list.find(p=>p.id===id)||null;
-if(!selected){$('editor').classList.add('hidden');return;}
-$('editor').classList.remove('hidden');$('selected-name').textContent=selected.name;
-$('selected-meta').textContent='Kod: '+(selected.product_code||'—')+' · Onay: '+(selected.approval_status||'—');
-$('preview').href='./urun-detay.html?code='+encodeURIComponent(selected.product_code||'')+'&name='+encodeURIComponent(selected.name||'');
-desc=readDescription(selected);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';
-const [vr,mr]=await Promise.all([db.from('product_variants').select('*').eq('product_id',id),db.from('product_variant_media').select('*').eq('product_id',id)]);
-if(vr.error)message('Varyant bilgileri okunamadı: '+vr.error.message,true);
-if(mr.error)message('Fotoğraf/video bilgileri okunamadı: '+mr.error.message,true);
-variantRows=vr.data||[];mediaRows=mr.data||[];selectedType='cutting';renderType();
-if(!vr.error&&!mr.error)message('“'+selected.name+'” için üç form açıldı.');
+ const token=++selectionToken,id=$('product').value,p=list.find(x=>x.id===id)||null;selected=p;
+ if(!p){$('editor').classList.add('hidden');$('quicklook').classList.add('hidden');return;}
+ // Kullanıcı ürünün fotoğrafını, ayrıntı sayfasına gitmeden hemen görür.
+ renderQuicklook(p);
+ $('editor').classList.remove('hidden');$('selected-name').textContent=p.name;
+ $('selected-meta').textContent='Kod: '+(p.product_code||'—')+' · Onay: '+(p.approval_status||'—');
+ $('preview').href='./urun-detay.html?code='+encodeURIComponent(p.product_code||'')+'&name='+encodeURIComponent(p.name||'');
+ desc=readDescription(p);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';
+ const [vr,mr,gr]=await Promise.all([
+ db.from('product_variants').select('*').eq('product_id',id),
+ db.from('product_variant_media').select('*').eq('product_id',id),
+ db.from('product_images').select('image_url,sort_order').eq('product_id',id).order('sort_order',{ascending:true}).limit(150)
+ ]);
+ if(token!==selectionToken)return;
+ if(vr.error)message('Varyant bilgileri okunamadı: '+vr.error.message,true);
+ if(mr.error)message('Fotoğraf/video bilgileri okunamadı: '+mr.error.message,true);
+ variantRows=vr.data||[];mediaRows=mr.data||[];selectedType='cutting';renderType();
+ if((gr.data||[]).length||mediaRows.some(x=>x.media_type==='image'))renderQuicklook(p,gr.data||[],mediaRows);
+ if(!vr.error&&!mr.error)message('“'+p.name+'” için üç form açıldı.');
 }
 async function saveDescription(){
 if(!selected)throw Error('Ürün seçmelisin.');

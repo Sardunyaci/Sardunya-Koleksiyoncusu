@@ -28,7 +28,7 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 <p class="row"><button id="reload" class="secondary" type="button">Listeyi yenile</button><button id="import" class="secondary" type="button">Eski katalogdaki eksik ürünleri ekle</button><button id="logout" class="secondary" type="button">Çıkış yap</button></p>
 <p class="muted small">Eski katalogdaki 27 çeşit hâlâ ana sayfada görünür. Yönetmek istediğin çeşit Supabase'de yoksa “eksik ürünleri ekle” ile kaydedebilirsin. Mevcut kayıtlar tekrar oluşturulmaz.</p></section>
 <section id="editor" class="hidden">
-<section class="card"><h2 id="selected-name">Ürün</h2><p id="selected-meta" class="muted"></p><a id="preview" class="button secondary" target="_blank" rel="noopener">Müşteri sayfasını aç</a><hr><h3>Çeşit Açıklaması</h3><p class="muted small">Bu açıklama her üç ürün formunun altında görünür. Çeşidi, çiçek özelliklerini ve yetiştirme notlarını buraya yaz.</p><textarea id="general" placeholder="Örnek: Bu koleksiyon çeşidi, çiçek yapısı ve dekoratif görünümüyle öne çıkar. Fotoğraflar temsil edilen çeşidi gösterir; gönderilecek bitkinin formu ayrıca seçilir."></textarea><p><button id="save-general" type="button">Genel açıklamayı kaydet</button></p></section>
+<section class="card"><h2 id="selected-name">Ürün</h2><p id="selected-meta" class="muted"></p><a id="preview" class="button secondary" target="_blank" rel="noopener">Müşteri sayfasını aç</a><hr><h3>Çeşit Açıklaması</h3><p class="muted small">Bu açıklama her üç ürün formunun altında görünür. Çeşidi, çiçek özelliklerini ve yetiştirme notlarını buraya yaz.</p><textarea id="general" placeholder="Örnek: Bu koleksiyon çeşidi, çiçek yapısı ve dekoratif görünümüyle öne çıkar. Fotoğraflar temsil edilen çeşidi gösterir; gönderilecek bitkinin formu ayrıca seçilir."></textarea><p><button id="save-general" type="button">Genel açıklamayı kaydet</button></p><p id="general-save-status" class="notice" role="status" aria-live="polite">Açıklama henüz bu oturumda kaydedilmedi.</p></section>
 <section class="card"><h2>Ürün Formları</h2><div class="tabs">
 <button data-type="cutting" class="active" type="button">Çelik<span>Köklendirilmemiş</span></button>
 <button data-type="seedling" type="button">Fide<span>Genç bitki</span></button>
@@ -100,7 +100,7 @@ if(!selected){$('editor').classList.add('hidden');return;}
 $('editor').classList.remove('hidden');$('selected-name').textContent=selected.name;
 $('selected-meta').textContent='Kod: '+(selected.product_code||'—')+' · Onay: '+(selected.approval_status||'—');
 $('preview').href='./urun-detay.html?code='+encodeURIComponent(selected.product_code||'')+'&name='+encodeURIComponent(selected.name||'');
-desc=readDescription(selected);$('general').value=desc.general;
+desc=readDescription(selected);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';
 const [vr,mr]=await Promise.all([db.from('product_variants').select('*').eq('product_id',id),db.from('product_variant_media').select('*').eq('product_id',id)]);
 if(vr.error)message('Varyant bilgileri okunamadı: '+vr.error.message,true);
 if(mr.error)message('Fotoğraf/video bilgileri okunamadı: '+mr.error.message,true);
@@ -112,8 +112,13 @@ if(!selected)throw Error('Ürün seçmelisin.');
 await assertAdmin();
 const payload={general:$('general').value.trim(),forms:desc.forms};
 const string='@SK1@'+JSON.stringify(payload);
-const q=await db.from('products').update({description:string}).eq('id',selected.id).select('id,description');
-if(q.error)throw q.error;if(!q.data?.length)throw Error('Açıklama kaydı doğrulanamadı. Supabase UPDATE/RLS iznini kontrol et.');
+const productId=selected.id;
+const q=await db.from('products').update({description:string}).eq('id',productId).select('id,description');
+if(q.error)throw Error('Supabase kaydetme hatası: '+q.error.message);
+if(!q.data?.length)throw Error('Kaydetme izni reddedildi veya kayıt güncellenmedi (products UPDATE/RLS).');
+const readback=await db.from('products').select('description').eq('id',productId).single();
+if(readback.error)throw Error('Kayıt sonrası kontrol yapılamadı: '+readback.error.message);
+if(readback.data?.description!==string)throw Error('Veritabanı içeriği değişmedi. Kaydedilmiş kabul edilmedi.');
 desc=payload;selected.description=string;
 }
 async function saveForm(){
@@ -181,7 +186,20 @@ $('login-form').addEventListener('submit',async e=>{e.preventDefault();const r=a
 $('product').addEventListener('change',()=>chooseProduct().catch(e=>message(e.message,true)));
 $('filter').addEventListener('input',filterProducts);
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{selectedType=b.dataset.type;renderType()}));
-$('save-general').onclick=()=>saveDescription().then(()=>message('Genel açıklama kaydedildi.')).catch(e=>message(e.message,true));
+$('save-general').onclick=async()=>{
+ const btn=$('save-general'),out=$('general-save-status');
+ btn.disabled=true;btn.textContent='Kaydediliyor…';out.textContent='Açıklama Supabase veritabanına gönderiliyor…';out.className='notice';
+ try{
+   await saveDescription();
+   out.textContent='✓ Genel açıklama kaydedildi ve veritabanından yeniden okunarak doğrulandı.';
+   out.className='notice';
+   message('Genel açıklama kaydedildi.');
+ }catch(e){
+   out.textContent='✕ KAYDEDİLEMEDİ: '+e.message;
+   out.className='notice err';
+   message('Genel açıklama kaydedilemedi: '+e.message,true);
+ }finally{btn.disabled=false;btn.textContent='Genel açıklamayı kaydet';}
+};
 $('save-form').onclick=()=>saveForm().catch(e=>message('Kaydetme hatası: '+e.message,true));
 $('upload-media').onclick=()=>uploadMedia().catch(e=>message('Medya yükleme hatası: '+e.message,true));
 $('import').onclick=()=>importMissing().catch(e=>message('İçe aktarma hatası: '+e.message,true));

@@ -105,7 +105,7 @@ const id=$('product').value;selected=list.find(p=>p.id===id)||null;
 if(!selected){$('editor').classList.add('hidden');return;}
 $('editor').classList.remove('hidden');$('selected-name').textContent=selected.name;
 $('selected-meta').textContent='Kod: '+(selected.product_code||'—')+' · Onay: '+(selected.approval_status||'—');
-$('preview').href='./urun-detay.html?code='+encodeURIComponent(selected.product_code||'')+'&name='+encodeURIComponent(selected.name||'');
+$('preview').href='./urun-detay-yeni.html?code='+encodeURIComponent(selected.product_code||'')+'&name='+encodeURIComponent(selected.name||'');
 desc=readDescription(selected);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';
 const [vr,mr]=await Promise.all([db.from('product_variants').select('*').eq('product_id',id),db.from('product_variant_media').select('*').eq('product_id',id)]);
 if(vr.error)message('Varyant bilgileri okunamadı: '+vr.error.message,true);

@@ -61,13 +61,13 @@ el('hero-caption').textContent=hasFormPhoto?'Seçilen ürün formunun fotoğrafl
 el('variantpic').src=item.images[0]||'';el('variantpic').style.visibility=item.images.length?'visible':'hidden';
 el('variant-empty').hidden=!!item.images.length;el('variant-empty').style.display=item.images.length?'none':'flex';
 el('thumbs').innerHTML=item.images.length?item.images.map((src,i)=>'<button data-i="'+i+'" class="'+(i===photo?'active':'')+'"><img src="'+src+'" alt="Fotoğraf '+(i+1)+'"></button>').join(''):'';
-el('photos').disabled=!item.images.length;el('video').disabled=!item.video;
+el('photos').disabled=!item.images.length&&!generalCover;el('video').disabled=!item.video;
 document.querySelectorAll('.forms button').forEach(b=>b.classList.toggle('active',b.dataset.type===selected));
 }
 document.querySelectorAll('.forms button').forEach(b=>b.onclick=()=>{selected=b.dataset.type;photo=0;draw()});
 el('thumbs').onclick=e=>{const b=e.target.closest('button');if(b){photo=Number(b.dataset.i);draw()}};
-let galleryIndex=0;function renderGallery(){const imgs=types[selected].images;if(!imgs.length)return;el('media').innerHTML='<img class="gallery-single" id="gallery-image" alt="Ürün fotoğrafı"><div class="gallery-nav"><button id="gallery-prev" aria-label="Önceki fotoğraf">❮</button><span id="gallery-count"></span><button id="gallery-next" aria-label="Sonraki fotoğraf">❯</button></div>';el('gallery-image').src=imgs[galleryIndex];el('gallery-count').textContent=(galleryIndex+1)+' / '+imgs.length;el('gallery-prev').onclick=()=>{galleryIndex=(galleryIndex-1+imgs.length)%imgs.length;renderGallery()};el('gallery-next').onclick=()=>{galleryIndex=(galleryIndex+1)%imgs.length;renderGallery()}};
-el('photos').onclick=()=>{galleryIndex=photo;renderGallery();el('overlay').classList.add('open')};
+let galleryIndex=0;function renderGallery(){const imgs=types[selected].images.length?types[selected].images:(generalCover?[generalCover]:[]);if(!imgs.length)return;el('media').innerHTML='<img class="gallery-single" id="gallery-image" alt="Ürün fotoğrafı"><div class="gallery-nav"><button id="gallery-prev" aria-label="Önceki fotoğraf">❮</button><span id="gallery-count"></span><button id="gallery-next" aria-label="Sonraki fotoğraf">❯</button></div>';el('gallery-image').src=imgs[galleryIndex];el('gallery-count').textContent=(galleryIndex+1)+' / '+imgs.length;el('gallery-prev').onclick=()=>{galleryIndex=(galleryIndex-1+imgs.length)%imgs.length;renderGallery()};el('gallery-next').onclick=()=>{galleryIndex=(galleryIndex+1)%imgs.length;renderGallery()}};
+el('photos').onclick=()=>{galleryIndex=types[selected].images.length?photo:0;renderGallery();el('overlay').classList.add('open')};
 el('video').onclick=()=>{const v=document.createElement('video');v.src=types[selected].video;v.controls=true;v.playsInline=true;el('media').replaceChildren(v);el('overlay').classList.add('open')};
 el('close').onclick=()=>{el('overlay').classList.remove('open');el('media').replaceChildren()};
 async function init(){

@@ -9,6 +9,13 @@ const types={cutting:{name:'Çelik (Köklendirilmemiş)',images:[],video:null},s
 const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'};let formDescriptions={};let variants={};let formWarnings={};
 const descriptions={cutting:'Köklendirme gerektiren çelik. Boyut, yaprak sayısı ve stok bilgisi satıcı tarafından doğrulanmalıdır.',seedling:'Genç, köklenmiş bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.',mother:'Gelişmiş anaç bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.'};
 let selected='cutting',photo=0,productName='',productCode='',generalCover=null;
+let coverCandidates=[],failedCovers=new Set(),failedFormPhotos=new Set();
+function addCovers(urls,prioritize=false){
+  const valid=urls.filter(u=>typeof u==='string'&&u.length<1800&&/^(https?:\/\/|images\/)/i.test(u));
+  coverCandidates=[...new Set(prioritize?[...valid,...coverCandidates]:[...coverCandidates,...valid])];
+  generalCover=coverCandidates.find(u=>!failedCovers.has(u))||null;
+}
+
 const el=id=>document.getElementById(id);
 // Kapak gorselleri ana katalogdaki mevcut 27 cesit ile eslesir. Eksik urun-formu fotograflari yerine sadece genel cicek fotografi gosterilir.
 const catalogCovers={"10":"https://images.prom.ua/1932751504_pelargoniya-zonalna-bold.jpg","31":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_31/red_pandora1.jpg","33":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_33/galina-33-1.jpg","34":"https://images.prom.ua/6620857703_yuv-elbrus-34.jpg","35":"https://images.prom.ua/1933486320_pelargoniya-tamara-geran.jpg","38":"https://images.prom.ua/6395593527_iv-maja-pliska.jpg","49":"https://images.prom.ua/7425435565_md-lyubochka-.jpg","81":"https://images.prom.ua/1934279425_pelargoniya-good-vibration.jpg","82":"https://images.prom.ua/6450625216_ta-emmanuel-82.jpg","94":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_94/ShYK_Grand_Prix.jpg","105":"https://images.prom.ua/6758569505_diaz-madrugada-105.jpg","110":"https://images.prom.ua/6758327919_by-karalovij-rif.jpg","121":"https://images.prom.ua/6574379756_nika-esmeralda-121.jpg","125":"https://images.prom.ua/6454369016_diaz-faramira-125.jpg","147":"https://images.prom.ua/6758153050_lara-delight-147.jpg","149":"https://images.prom.ua/7341982570_sim-praline-149.jpg","150":"https://images.prom.ua/7341902277_sim-harizma-150.jpg","154":"https://images.prom.ua/7601883615_ts-maya-154.jpg","192":"https://images.prom.ua/2697729416_odensjo-madame-bovary.jpg","194":"https://images.prom.ua/3612069060_194-yuv-bila.jpg","250":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_250/jogerhus_1.jpg","251":"https://images.prom.ua/3097729969_yug-printsesa-grejs.jpg","254":"https://images.prom.ua/3109433705_och-madpearl-white.jpg","264":"https://images.prom.ua/3615677864_pelargoniya-svit-orha.jpg","270":"https://images.prom.ua/6758333968_270-yu-nastasya.jpg","1243":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1243/1243-26.jpg","1704":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1704/1704-25.jpg"};
@@ -48,13 +55,16 @@ el('order-link').hidden=!ready;
 el('buy-hint').textContent=ready?'Sipariş talebi WhatsApp üzerinden iletilir; ödeme ve kesin stok satıcı tarafından onaylanır.':warn?'Varyant kayıtları tutarlı olmadığından sipariş kapalı.':'Satışa hazır olmayan çeşitler için bilgi alabilirsiniz.';
 updateContacts(ready,p);
 
-const hasFormPhoto=item.images.length>0;
-const primary=hasFormPhoto?item.images[photo]:generalCover;
+const formPhoto=item.images[photo];
+const hasFormPhoto=!!formPhoto&&!failedFormPhotos.has(formPhoto);
+const primary=hasFormPhoto?formPhoto:generalCover;
 el('hero').alt=hasFormPhoto?productName+' · '+item.name:generalCover?productName+' · genel çeşit fotoğrafı':'Görsel yüklenmedi';
 el('hero').onerror=()=>{
-  if(hasFormPhoto && generalCover){el('hero').onerror=()=>{generalCover=null;draw()};el('hero').src=generalCover;el('hero-caption').textContent='Genel çeşit fotoğrafı gösteriliyor; seçilen formun fotoğrafı açılamadı.';}
-  else if(!hasFormPhoto&&generalCover){generalCover=null;draw()}
-  else{el('hero').style.visibility='hidden';el('hero-empty').hidden=false;el('hero-empty').style.display='flex';}
+  // Bozuk fotoğrafa tekrar tekrar istek gönderme; sıradaki gerçek fotoğrafa geç.
+  if(hasFormPhoto)failedFormPhotos.add(formPhoto);
+  else if(generalCover)failedCovers.add(generalCover);
+  generalCover=coverCandidates.find(u=>!failedCovers.has(u))||null;
+  draw();
 };
 if(primary){if(el('hero').getAttribute('src')!==primary)el('hero').setAttribute('src',primary);}else el('hero').removeAttribute('src');
 el('hero').style.visibility=primary?'visible':'hidden';
@@ -68,15 +78,16 @@ document.querySelectorAll('.forms button').forEach(b=>b.classList.toggle('active
 }
 document.querySelectorAll('.forms button').forEach(b=>b.onclick=()=>{selected=b.dataset.type;photo=0;draw()});
 el('thumbs').onclick=e=>{const b=e.target.closest('button');if(b){photo=Number(b.dataset.i);draw()}};
-let galleryIndex=0;function renderGallery(){const imgs=types[selected].images.length?types[selected].images:(generalCover?[generalCover]:[]);if(!imgs.length)return;el('media').innerHTML='<img class="gallery-single" id="gallery-image" alt="Ürün fotoğrafı"><div class="gallery-nav"><button id="gallery-prev" aria-label="Önceki fotoğraf">❮</button><span id="gallery-count"></span><button id="gallery-next" aria-label="Sonraki fotoğraf">❯</button></div>';el('gallery-image').src=imgs[galleryIndex];el('gallery-count').textContent=(galleryIndex+1)+' / '+imgs.length;el('gallery-prev').onclick=()=>{galleryIndex=(galleryIndex-1+imgs.length)%imgs.length;renderGallery()};el('gallery-next').onclick=()=>{galleryIndex=(galleryIndex+1)%imgs.length;renderGallery()}};
+let galleryIndex=0;function renderGallery(){const imgs=types[selected].images.length?types[selected].images:coverCandidates.filter(u=>!failedCovers.has(u));if(!imgs.length)return;el('media').innerHTML='<img class="gallery-single" id="gallery-image" alt="Ürün fotoğrafı"><div class="gallery-nav"><button id="gallery-prev" aria-label="Önceki fotoğraf">❮</button><span id="gallery-count"></span><button id="gallery-next" aria-label="Sonraki fotoğraf">❯</button></div>';el('gallery-image').src=imgs[galleryIndex];el('gallery-count').textContent=(galleryIndex+1)+' / '+imgs.length;el('gallery-prev').onclick=()=>{galleryIndex=(galleryIndex-1+imgs.length)%imgs.length;renderGallery()};el('gallery-next').onclick=()=>{galleryIndex=(galleryIndex+1)%imgs.length;renderGallery()}};
 el('photos').onclick=()=>{galleryIndex=types[selected].images.length?photo:0;renderGallery();el('overlay').classList.add('open')};
 el('video').onclick=()=>{const v=document.createElement('video');v.src=types[selected].video;v.controls=true;v.playsInline=true;el('media').replaceChildren(v);el('overlay').classList.add('open')};
 el('close').onclick=()=>{el('overlay').classList.remove('open');el('media').replaceChildren()};
 async function init(){
 const params=new URLSearchParams(location.search);const code=params.get('code');const name=params.get('name');
-const cover=params.get('cover');if(cover&&cover.length<1800&&/^(https?:\/\/|images\/)/i.test(cover)){generalCover=cover;}
-// Yonetim panelinden acilan linklerde cover parametresi yoktur; koddan katalog fotografini bul.
-if(!generalCover&&code&&catalogCovers[String(code).trim()])generalCover=catalogCovers[String(code).trim()];
+const cover=params.get('cover');
+// Eski katalogdaki 27 çeşidin fotoğrafları kodları ile eşleşir, bağlantıda fotoğraf olması gerekmez.
+if(code&&catalogCovers[String(code).trim()])addCovers([catalogCovers[String(code).trim()]]);
+if(cover)addCovers([cover]);
 if(!code&&!name){el('product-name').textContent='Ürün seçilmedi';draw();return;}
 productCode=code||'';productName=name||'Sardunya çeşidi';
 const headers={apikey:sbKey,Authorization:'Bearer '+sbKey};
@@ -86,9 +97,14 @@ const response=await fetch(sbUrl+'/rest/v1/products?select=*&approval_status=eq.
 if(!response.ok)throw Error('Ürün bilgisi yüklenemedi');
 const rows=await response.json();const p=rows[0];
 if(p){productName=p.name||productName;productCode=String(p.product_code||productCode);
-if(!generalCover&&catalogCovers[productCode])generalCover=catalogCovers[productCode];
-const mr=await fetch(sbUrl+'/rest/v1/product_variant_media?select=variant_type,media_type,media_url&product_id=eq.'+encodeURIComponent(p.id)+'&limit=2000',{headers});
-if(mr.ok){const media=await mr.json();for(const m of media){const type=({cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'})[String(m.variant_type||'').toLocaleLowerCase('tr')];if(!type||!m.media_url)continue;if(m.media_type==='image'&&!types[type].images.includes(m.media_url))types[type].images.push(m.media_url);if(m.media_type==='video'&&!types[type].video)types[type].video=m.media_url;}}
+if(catalogCovers[productCode])addCovers([catalogCovers[productCode]]);
+// Ürün yönetim panelindeki genel galeri de her yeni ürün kodunda otomatik kullanılır.
+const [mr,gi]=await Promise.all([
+  fetch(sbUrl+'/rest/v1/product_variant_media?select=variant_type,media_type,media_url&product_id=eq.'+encodeURIComponent(p.id)+'&limit=2000',{headers}).catch(()=>null),
+  fetch(sbUrl+'/rest/v1/product_images?select=image_url,sort_order&product_id=eq.'+encodeURIComponent(p.id)+'&order=sort_order.asc&limit=100',{headers}).catch(()=>null)
+]);
+if(gi&&gi.ok){try{const photos=await gi.json();addCovers(photos.map(x=>x.image_url),true)}catch(e){console.warn('Genel fotoğraflar okunamadı:',e)}}
+if(mr&&mr.ok){const media=await mr.json();for(const m of media){const type=({cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'})[String(m.variant_type||'').toLocaleLowerCase('tr')];if(!type||!m.media_url)continue;if(m.media_type==='image'&&!types[type].images.includes(m.media_url))types[type].images.push(m.media_url);if(m.media_type==='video'&&!types[type].video)types[type].video=m.media_url;}}
 const desc=p.description||p.product_description;
 if(typeof desc==='string'&&desc.trim()){
  if(desc.startsWith('@SK1@')){try{const d=JSON.parse(desc.slice(5));el('product-description').textContent=d.general||'Genel açıklama henüz eklenmedi.';formDescriptions=d.forms||{};}catch{el('product-description').textContent='Açıklama okunamadı; yönetim panelinden kontrol edilmeli.';}}

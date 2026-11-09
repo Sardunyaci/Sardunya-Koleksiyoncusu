@@ -39,7 +39,7 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 <label>Bu ürün formuna özel açıklama</label><textarea id="form-description" placeholder="Örnek: Köklendirilmemiş çelik gönderilir. Gönderilecek parçanın güncel boyu ve yaprak sayısı stok durumuna göre belirtilir."></textarea>
 <label class="row"><input id="variant-on-sale" type="checkbox"> Stok ve fiyat doğrulandı, bu form satışa hazır</label>
 <p class="muted small">Fiyat ve stok girmek tek başına satışı açmaz. Onay kutusu seçilmedikçe satışa kapalı kalır.</p>
-<p><button id="save-form" type="button">Bu formun fiyat, stok ve açıklamasını kaydet</button></p></section>
+<p><button id="save-form" type="button">Bu formun fiyat, stok ve açıklamasını kaydet</button></p><p id="form-save-status" class="notice" role="status" aria-live="polite">Henüz kaydedilmedi.</p></section>
 <section class="card"><h2>Fotoğraf ve Video</h2><p class="muted">Yüklenen medya yalnızca şu formda görünür: <strong id="media-type-label">Çelik</strong></p>
 <label>Bir veya birden fazla fotoğraf ekle</label><input id="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
 <label>Video ekle</label><input id="videos" type="file" accept="video/mp4,video/webm,video/quicktime" multiple>
@@ -77,15 +77,21 @@ function recordsFor(type){return variantRows.filter(row=>alias[String(row.varian
 function renderType(){
 document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.type===selectedType));
 $('media-type-label').textContent=labels[selectedType];
-const matching=recordsFor(selectedType),r=matching[0];
-$('variant-price').value=matching.length===1?(r.price_tl??r.price??''):'';
-$('variant-stock').value=matching.length===1?(r.stock_quantity??r.stock??''):'';
-$('variant-on-sale').checked=matching.length===1&&r.is_available===true&&r.on_sale===true;
-$('form-description').value=desc.forms[selectedType]||'';
-const status=matching.length>1?'Bu form için '+matching.length+' ayrı kayıt bulundu. Fiyat ve stok düzenlemesi güvenlik nedeniyle kapatıldı. Önce çift kayıtların uzlaştırılması gerekiyor.':matching.length===1?'Mevcut varyant yüklendi. Düzenlemeleri kaydedebilirsin.':'Bu form için varyant kaydı yok. Bilgileri doldurup kaydedebilirsin.';
+const matching=recordsFor(selectedType);
+const distinct=fn=>[...new Set(matching.map(fn).filter(v=>v!==null&&v!==undefined&&v!==''))];
+const prices=distinct(r=>r.price_tl??r.price),stocks=distinct(r=>r.stock_quantity??r.stock);
+const statuses=distinct(r=>String(r.is_available===true&&r.on_sale===true));
+$('variant-price').value=prices.length===1?prices[0]:'';
+$('variant-stock').value=stocks.length===1?stocks[0]:'';
+$('variant-on-sale').checked=matching.length>0&&statuses.length===1&&statuses[0]==='true';
+$('form-description').value=desc.forms[selectedType]||'';$('form-save-status').textContent='Bu formda henüz değişiklik kaydedilmedi.';$('form-save-status').className='notice';
+const status=matching.length>1
+?'Bu formda '+matching.length+' eski kayıt bulundu. Veriler silinmez. Kaydettiğinde bu formun fiyat, stok ve satış bilgileri bütün eşdeğer kayıtlarda aynı değere güncellenir. Önce girdiklerini kontrol et.'
+:matching.length===1?'Mevcut varyant yüklendi. Düzenlemeleri kaydedebilirsin.'
+:'Bu form için varyant kaydı yok. Kaydedince yeni kayıt oluşturulur.';
 $('variant-warning').textContent=status;
 $('variant-warning').className='notice'+(matching.length>1?' warn':'');
-$('save-form').disabled=matching.length>1;
+$('save-form').disabled=false;
 renderMedia();
 }
 function renderMedia(){
@@ -125,24 +131,34 @@ async function saveForm(){
 if(!selected)throw Error('Ürün seçmelisin.');
 await assertAdmin();
 const matches=recordsFor(selectedType);
-if(matches.length>1)throw Error('Bu formda birden fazla kayıt var. Otomatik birleştirme yapılmadı.');
 const pr=$('variant-price').value.trim(),st=$('variant-stock').value.trim(),active=$('variant-on-sale').checked;
 const price=pr===''?null:Number(pr),stock=st===''?null:Number(st);
 if(price!==null&&(!Number.isFinite(price)||price<0))throw Error('Fiyat geçersiz.');
 if(stock!==null&&(!Number.isInteger(stock)||stock<0))throw Error('Stok, sıfır veya pozitif tam sayı olmalı.');
-if(active&&(!(price>0)||!(stock>0)))throw Error('Satışa açmak için pozitif fiyat ve stok gerekli.');
+if(active&&(!(price>0)||!(stock>0)))throw Error('Satışa hazır için pozitif fiyat ve stok gerekli.');
 if(active&&!confirm('Bu ürün formunu satışa hazır olarak işaretlemek istiyor musun?'))return;
+if(matches.length>1&&!confirm('Bu formda '+matches.length+' eşdeğer eski kayıt var. HİÇBİRİ SİLİNMEYECEK. Kaydettiğin fiyat, stok ve durum bu kayıtların tamamına eşitlenecek. Onaylıyor musun?'))return;
 const payload={price,price_tl:price,stock_quantity:stock,stock,is_available:active,on_sale:active};
 let q;
-if(matches.length===1){q=await db.from('product_variants').update(payload).eq('id',matches[0].id).select('id');}
+if(matches.length){q=await db.from('product_variants').update(payload).in('id',matches.map(r=>r.id)).select('id');}
 else q=await db.from('product_variants').insert({product_id:selected.id,variant_type:selectedType,...payload}).select('id');
-if(q.error)throw q.error;
-if(!q.data?.length)throw Error('Varyant kaydı doğrulanamadı.');
-desc.forms[selectedType]=$('form-description').value.trim();
-await saveDescription();
-const vr=await db.from('product_variants').select('*').eq('product_id',selected.id);
-if(vr.error)throw vr.error;variantRows=vr.data||[];renderType();
-message(labels[selectedType]+' fiyat, stok, satış durumu ve açıklaması kaydedildi.');
+if(q.error)throw Error('Varyant veritabanı hatası: '+q.error.message);
+if((q.data||[]).length!==Math.max(1,matches.length))throw Error('Varyant kayıtlarının tümü güncellenemedi; kayıtları tekrar kontrol et.');
+const description={...desc,general:$('general').value.trim(),forms:{...desc.forms,[selectedType]:$('form-description').value.trim()}};
+const string='@SK1@'+JSON.stringify(description);
+const uq=await db.from('products').update({description:string}).eq('id',selected.id).select('id,description');
+if(uq.error||!uq.data?.length)throw Error('Fiyat ve stok kaydedildi ancak açıklama kaydedilemedi: '+(uq.error?.message||'Erişim izni'));
+const [vr,prRead]=await Promise.all([db.from('product_variants').select('*').eq('product_id',selected.id),db.from('products').select('description').eq('id',selected.id).single()]);
+if(vr.error||prRead.error)throw Error('Kayıtların doğrulaması yapılamadı.');
+const verified=vr.data.filter(row=>alias[String(row.variant_type||'').toLocaleLowerCase('tr')]===selectedType);
+const equal=v=>v===null||v===undefined||v==='';
+if(verified.length!==Math.max(matches.length,1)||!verified.every(row=>
+(Number(row.price_tl??row.price)===price||(price===null&&equal(row.price_tl??row.price)))&&
+(Number(row.stock_quantity??row.stock)===stock||(stock===null&&equal(row.stock_quantity??row.stock)))&&
+row.is_available===active&&row.on_sale===active)
+||prRead.data.description!==string)throw Error('Kaydedilen verilerin tümü doğrulanamadı.');
+desc=description;selected.description=string;variantRows=vr.data;renderType();
+message(labels[selectedType]+' için fiyat, stok, satış durumu ve açıklama kaydedildi; Supabase üzerinden kontrol edildi.');
 }
 async function uploadMedia(){
 if(!selected)throw Error('Ürün seçmelisin.');await assertAdmin();
@@ -200,7 +216,7 @@ $('save-general').onclick=async()=>{
    message('Genel açıklama kaydedilemedi: '+e.message,true);
  }finally{btn.disabled=false;btn.textContent='Genel açıklamayı kaydet';}
 };
-$('save-form').onclick=()=>saveForm().catch(e=>message('Kaydetme hatası: '+e.message,true));
+$('save-form').onclick=async()=>{const out=$('form-save-status'),btn=$('save-form');btn.disabled=true;out.textContent='Kaydediliyor…';out.className='notice';try{await saveForm();out.textContent='✓ Kayıt güncellendi ve Supabase üzerinden doğrulandı.';out.className='notice';}catch(e){out.textContent='✕ Kaydedilemedi: '+e.message;out.className='notice err';message(e.message,true)}finally{btn.disabled=false}};
 $('upload-media').onclick=()=>uploadMedia().catch(e=>message('Medya yükleme hatası: '+e.message,true));
 $('import').onclick=()=>importMissing().catch(e=>message('İçe aktarma hatası: '+e.message,true));
 $('reload').onclick=()=>loadProducts().catch(e=>message(e.message,true));

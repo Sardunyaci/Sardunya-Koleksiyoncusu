@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ürün Formları | Sardunya Koleksiyoncusu</title>
+<style>
+:root{color:#173e31;font:16px/1.55 Arial,Helvetica,sans-serif;background:#f2f6f2}*{box-sizing:border-box}
+body{margin:0}header{background:#075d48;color:white;padding:19px max(18px,5vw);display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+a{color:inherit}header a{color:white;text-decoration:none}main{max-width:1180px;margin:26px auto;padding:0 17px 50px}
+.card{background:white;border-radius:15px;padding:23px;margin:17px 0;box-shadow:0 5px 25px #0b352511}
+h1{font-size:25px;margin:0}h2{font:normal 29px Georgia,serif;margin:0 0 13px}h3{font:normal 23px Georgia,serif;margin:0 0 12px}
+p{margin:9px 0}label{display:block;font-weight:bold;font-size:14px;margin:14px 0 6px}
+input,textarea,select{font:inherit;border:1px solid #bfcec5;border-radius:8px;background:white;padding:12px;width:100%;color:#173e31}
+textarea{resize:vertical;min-height:115px}input[type=checkbox]{width:auto;accent-color:#087456;transform:scale(1.2)}
+button,.button{font:inherit;background:#087456;color:white;border:0;border-radius:9px;padding:12px 18px;cursor:pointer;text-decoration:none;display:inline-block}
+button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px solid #bfd0c5}button:disabled{opacity:.5;cursor:not-allowed}
+.muted{color:#62756a}.small{font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}.hidden{display:none!important}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.tabs button{background:#edf5ef;color:#145036;border:1px solid #bcd7c8;min-height:70px}.tabs button.active{background:#075d48;color:#fff}
+.tabs span{display:block;font-size:12px}.notice{padding:13px;background:#edf6f0;border-radius:10px;margin:13px 0;white-space:pre-wrap}
+.warn{background:#fff4e5;color:#8d5216}.err{background:#ffeceb;color:#96332b}
+.media{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}.media-item{border:1px solid #d3e2d9;padding:9px;border-radius:10px;overflow-wrap:anywhere}.media-item img,.media-item video{width:100%;height:130px;object-fit:cover;border-radius:7px;background:#eef2ef}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}hr{border:0;border-top:1px solid #e1eae4;margin:24px 0}
+@media(max-width:750px){.grid{grid-template-columns:1fr}.tabs button{font-size:14px;padding:9px 4px}header{font-size:14px}.card{padding:16px}}
+</style></head><body>
+<header><a href="./index.html"><strong>🌺 Sardunya Koleksiyoncusu</strong></a><nav><a href="./admin.html">← Yönetim paneli</a></nav></header>
+<main><section class="card"><h1>Ürün Formları Yönetimi</h1><p class="muted">Tüm katalog çeşitleri için Çelik, Fide ve Anaç fotoğrafı, videosu, fiyatı, stok miktarı ve açıklamasını ayrı ayrı yönet.</p><div class="notice warn">Satış otomatik açılmaz. Çift kayıtlar silinmez veya rastgele birleştirilmez. Eski fotoğraflar korunur.</div></section>
+<section class="card" id="login-box"><h2>Yönetici girişi</h2><form id="login-form"><label>E-posta</label><input id="email" type="email" required autocomplete="username"><label>Şifre</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Giriş yap</button></p></form></section>
+<div id="panel" class="hidden">
+<section class="card"><h2>Ürün Seçimi</h2><div class="grid"><div><label>Ürün ara</label><input id="filter" placeholder="Çeşit adı veya kod"></div><div><label>Ürün</label><select id="product"><option value="">Ürün seçiniz…</option></select></div></div>
+<p class="row"><button id="reload" class="secondary" type="button">Listeyi yenile</button><button id="import" class="secondary" type="button">Eski katalogdaki eksik ürünleri ekle</button><button id="logout" class="secondary" type="button">Çıkış yap</button></p>
+<p class="muted small">Eski katalogdaki 27 çeşit hâlâ ana sayfada görünür. Yönetmek istediğin çeşit Supabase'de yoksa “eksik ürünleri ekle” ile kaydedebilirsin. Mevcut kayıtlar tekrar oluşturulmaz.</p></section>
+<section id="editor" class="hidden">
+<section class="card"><h2 id="selected-name">Ürün</h2><p id="selected-meta" class="muted"></p><a id="preview" class="button secondary" target="_blank" rel="noopener">Müşteri sayfasını aç</a><hr><h3>Çeşit Açıklaması</h3><p class="muted small">Bu açıklama her üç ürün formunun altında görünür. Çeşidi, çiçek özelliklerini ve yetiştirme notlarını buraya yaz.</p><textarea id="general" placeholder="Örnek: Bu koleksiyon çeşidi, çiçek yapısı ve dekoratif görünümüyle öne çıkar. Fotoğraflar temsil edilen çeşidi gösterir; gönderilecek bitkinin formu ayrıca seçilir."></textarea><p><button id="save-general" type="button">Genel açıklamayı kaydet</button></p></section>
+<section class="card"><h2>Ürün Formları</h2><div class="tabs">
+<button data-type="cutting" class="active" type="button">Çelik<span>Köklendirilmemiş</span></button>
+<button data-type="seedling" type="button">Fide<span>Genç bitki</span></button>
+<button data-type="mother" type="button">Anaç<span>Yetişkin bitki</span></button>
+</div><div id="variant-warning" class="notice" role="status">Varyant bilgileri getiriliyor…</div>
+<div class="grid"><div><label>Fiyat (TL)</label><input id="variant-price" type="number" min="0" step="0.01" placeholder="Henüz belirlenmedi"></div>
+<div><label>Stok (adet)</label><input id="variant-stock" type="number" min="0" step="1" placeholder="Henüz belirlenmedi"></div></div>
+<label>Bu ürün formuna özel açıklama</label><textarea id="form-description" placeholder="Örnek: Köklendirilmemiş çelik gönderilir. Gönderilecek parçanın güncel boyu ve yaprak sayısı stok durumuna göre belirtilir."></textarea>
+<label class="row"><input id="variant-on-sale" type="checkbox"> Stok ve fiyat doğrulandı, bu form satışa hazır</label>
+<p class="muted small">Fiyat ve stok girmek tek başına satışı açmaz. Onay kutusu seçilmedikçe satışa kapalı kalır.</p>
+<p><button id="save-form" type="button">Bu formun fiyat, stok ve açıklamasını kaydet</button></p></section>
+<section class="card"><h2>Fotoğraf ve Video</h2><p class="muted">Yüklenen medya yalnızca şu formda görünür: <strong id="media-type-label">Çelik</strong></p>
+<label>Bir veya birden fazla fotoğraf ekle</label><input id="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+<label>Video ekle</label><input id="videos" type="file" accept="video/mp4,video/webm,video/quicktime" multiple>
+<p><button id="upload-media" type="button">Seçilen medyayı yükle</button></p><div id="media-gallery" class="media"></div>
+<p class="muted small">Medya yüklerken mevcut kayıtlar silinmez; aynı dosyayı yeniden yüklememeye dikkat et.</p></section></section></div>
+<section id="status" class="card notice" role="status">Yönetici oturumu kontrol ediliyor…</section></main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const url='https://qhhvhuomfqhkrvcwxwgp.supabase.co';
+const key='sb_publishable_0xXY9QFQdcpqFeBpYhthvw_aa2_Vene';
+const db=createClient(url,key);
+const original=[{"name":"YuV Elbrus","code":"34"},{"name":"SiM Charisma","code":"150"},{"name":"SiM Praline","code":"149"},{"name":"TS Maya","code":"154"},{"name":"DiaZ Madrugada","code":"105"},{"name":"Good Vibration","code":"81"},{"name":"Bold Diamond Wedding","code":"10"},{"name":"Tamara","code":"35"},{"name":"IV Maya Plisetskaya","code":"38"},{"name":"Red Pandora","code":"31"},{"name":"Odensjo Madame Bovary","code":"192"},{"name":"Jagershus Borre","code":"250"},{"name":"OCh Madpearl White","code":"254"},{"name":"Sweet Orha","code":"264"},{"name":"YuG Princess Grace","code":"251"},{"name":"TA Emmanuel","code":"82"},{"name":"BY Coral Reef","code":"110"},{"name":"DiaZ Faramira","code":"125"},{"name":"ShiK Grand Prix","code":"94"},{"name":"Nika Esmeralda","code":"121"},{"name":"Lara Delight","code":"147"},{"name":"MD Lyubochka","code":"49"},{"name":"Yu Nastasya Filippovna","code":"270"},{"name":"YuV White Magic","code":"194"},{"name":"LiA Eteriya","code":"1704"},{"name":"LiA Freya","code":"1243"},{"name":"IV Galina Ulanova","code":"33"}];
+const $=id=>document.getElementById(id);
+const labels={cutting:'Çelik',seedling:'Fide',mother:'Anaç'};
+const alias={cutting:'cutting','çelik':'cutting',celik:'cutting',seedling:'seedling',fide:'seedling',mother:'mother','anaç':'mother',anac:'mother'};
+const types=['cutting','seedling','mother'];
+let list=[],selected=null,selectedType='cutting',variantRows=[],mediaRows=[],desc={general:'',forms:{}};
+const message=(str,bad=false)=>{const n=$('status');n.textContent=str;n.className='card notice'+(bad?' err':'')};
+const assertAdmin=async()=>{const u=await db.auth.getUser();if(u.error||!u.data.user)throw Error('Yönetici girişi gerekli.');const q=await db.from('profiles').select('role').eq('id',u.data.user.id).single();if(q.error||q.data?.role!=='admin')throw Error('Yönetici yetkisi bulunamadı.');return u.data.user};
+async function session(){try{await assertAdmin();$('login-box').classList.add('hidden');$('panel').classList.remove('hidden');await loadProducts()}catch(e){$('login-box').classList.remove('hidden');$('panel').classList.add('hidden');message(e.message,true)}}
+async function loadProducts(){await assertAdmin();const r=await db.from('products').select('*').order('name',{ascending:true}).limit(1000);if(r.error)throw r.error;list=r.data||[];filterProducts();message(list.length+' ürün yönetim paneline yüklendi.');}
+function filterProducts(){
+const chosen=$('product').value||selected?.id||'';
+const filter=$('filter').value.toLocaleLowerCase('tr');
+$('product').replaceChildren(new Option('Ürün seçiniz…',''));
+for(const p of list){if(!((p.name||'')+' '+(p.product_code||'')).toLocaleLowerCase('tr').includes(filter))continue;$('product').add(new Option((p.name||'İsimsiz')+' · '+(p.product_code||'Kod yok'),p.id));}
+if([...$('product').options].some(x=>x.value===chosen))$('product').value=chosen;
+}
+function readDescription(p){
+const raw=p.description||p.product_description||'';
+if(typeof raw==='string'&&raw.startsWith('@SK1@')){try{const parsed=JSON.parse(raw.slice(5));return {general:String(parsed.general||''),forms:parsed.forms||{}}}catch{}}
+return {general:String(raw),forms:{}};
+}
+function recordsFor(type){return variantRows.filter(row=>alias[String(row.variant_type||'').toLocaleLowerCase('tr')]===type)}
+function renderType(){
+document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.type===selectedType));
+$('media-type-label').textContent=labels[selectedType];
+const matching=recordsFor(selectedType),r=matching[0];
+$('variant-price').value=matching.length===1?(r.price_tl??r.price??''):'';
+$('variant-stock').value=matching.length===1?(r.stock_quantity??r.stock??''):'';
+$('variant-on-sale').checked=matching.length===1&&r.is_available===true&&r.on_sale===true;
+$('form-description').value=desc.forms[selectedType]||'';
+const status=matching.length>1?'Bu form için '+matching.length+' ayrı kayıt bulundu. Fiyat ve stok düzenlemesi güvenlik nedeniyle kapatıldı. Önce çift kayıtların uzlaştırılması gerekiyor.':matching.length===1?'Mevcut varyant yüklendi. Düzenlemeleri kaydedebilirsin.':'Bu form için varyant kaydı yok. Bilgileri doldurup kaydedebilirsin.';
+$('variant-warning').textContent=status;
+$('variant-warning').className='notice'+(matching.length>1?' warn':'');
+$('save-form').disabled=matching.length>1;
+renderMedia();
+}
+function renderMedia(){
+$('media-gallery').replaceChildren();
+const media=mediaRows.filter(m=>alias[String(m.variant_type||'').toLocaleLowerCase('tr')]===selectedType);
+if(!media.length){$('media-gallery').textContent='Bu forma henüz fotoğraf veya video yüklenmedi.';return;}
+for(const m of media){const box=document.createElement('div');box.className='media-item';const view=document.createElement(m.media_type==='video'?'video':'img');view.src=m.media_url;if(m.media_type==='video')view.controls=true;else view.loading='lazy';box.append(view);const a=document.createElement('a');a.href=m.media_url;a.target='_blank';a.rel='noopener';a.textContent=m.media_type==='video'?'Videoyu aç':'Fotoğrafı aç';box.append(a);$('media-gallery').append(box);}
+}
+async function chooseProduct(){
+const id=$('product').value;selected=list.find(p=>p.id===id)||null;
+if(!selected){$('editor').classList.add('hidden');return;}
+$('editor').classList.remove('hidden');$('selected-name').textContent=selected.name;
+$('selected-meta').textContent='Kod: '+(selected.product_code||'—')+' · Onay: '+(selected.approval_status||'—');
+$('preview').href='./urun-detay.html?code='+encodeURIComponent(selected.product_code||'')+'&name='+encodeURIComponent(selected.name||'');
+desc=readDescription(selected);$('general').value=desc.general;
+const [vr,mr]=await Promise.all([db.from('product_variants').select('*').eq('product_id',id),db.from('product_variant_media').select('*').eq('product_id',id)]);
+if(vr.error)message('Varyant bilgileri okunamadı: '+vr.error.message,true);
+if(mr.error)message('Fotoğraf/video bilgileri okunamadı: '+mr.error.message,true);
+variantRows=vr.data||[];mediaRows=mr.data||[];selectedType='cutting';renderType();
+if(!vr.error&&!mr.error)message('“'+selected.name+'” için üç form açıldı.');
+}
+async function saveDescription(){
+if(!selected)throw Error('Ürün seçmelisin.');
+await assertAdmin();
+const payload={general:$('general').value.trim(),forms:desc.forms};
+const string='@SK1@'+JSON.stringify(payload);
+const q=await db.from('products').update({description:string}).eq('id',selected.id).select('id,description');
+if(q.error)throw q.error;if(!q.data?.length)throw Error('Açıklama kaydı doğrulanamadı. Supabase UPDATE/RLS iznini kontrol et.');
+desc=payload;selected.description=string;
+}
+async function saveForm(){
+if(!selected)throw Error('Ürün seçmelisin.');
+await assertAdmin();
+const matches=recordsFor(selectedType);
+if(matches.length>1)throw Error('Bu formda birden fazla kayıt var. Otomatik birleştirme yapılmadı.');
+const pr=$('variant-price').value.trim(),st=$('variant-stock').value.trim(),active=$('variant-on-sale').checked;
+const price=pr===''?null:Number(pr),stock=st===''?null:Number(st);
+if(price!==null&&(!Number.isFinite(price)||price<0))throw Error('Fiyat geçersiz.');
+if(stock!==null&&(!Number.isInteger(stock)||stock<0))throw Error('Stok, sıfır veya pozitif tam sayı olmalı.');
+if(active&&(!(price>0)||!(stock>0)))throw Error('Satışa açmak için pozitif fiyat ve stok gerekli.');
+if(active&&!confirm('Bu ürün formunu satışa hazır olarak işaretlemek istiyor musun?'))return;
+const payload={price,price_tl:price,stock_quantity:stock,stock,is_available:active,on_sale:active};
+let q;
+if(matches.length===1){q=await db.from('product_variants').update(payload).eq('id',matches[0].id).select('id');}
+else q=await db.from('product_variants').insert({product_id:selected.id,variant_type:selectedType,...payload}).select('id');
+if(q.error)throw q.error;
+if(!q.data?.length)throw Error('Varyant kaydı doğrulanamadı.');
+desc.forms[selectedType]=$('form-description').value.trim();
+await saveDescription();
+const vr=await db.from('product_variants').select('*').eq('product_id',selected.id);
+if(vr.error)throw vr.error;variantRows=vr.data||[];renderType();
+message(labels[selectedType]+' fiyat, stok, satış durumu ve açıklaması kaydedildi.');
+}
+async function uploadMedia(){
+if(!selected)throw Error('Ürün seçmelisin.');await assertAdmin();
+const files=[...$('photos').files,...$('videos').files];
+if(!files.length)throw Error('Fotoğraf veya video seçmelisin.');
+let count=0,fail=[];
+for(const file of files){
+ const isVideo=file.type.startsWith('video/'),isImage=file.type.startsWith('image/');
+ if(!isImage&&!isVideo){fail.push(file.name+': Desteklenmeyen dosya');continue;}
+ if(file.size>(isVideo?80:10)*1024*1024){fail.push(file.name+': Dosya çok büyük');continue;}
+ const extension=(file.name.split('.').pop()||'').toLowerCase();
+ const safeExtension=/^[a-z0-9]{2,5}$/.test(extension)?extension:(isVideo?'mp4':'jpg');
+ const path='variants/'+selected.id+'/'+selectedType+'/'+crypto.randomUUID()+'.'+safeExtension;
+ const up=await db.storage.from('product-images').upload(path,file,{contentType:file.type,upsert:false});
+ if(up.error){fail.push(file.name+': '+up.error.message);continue;}
+ const link=db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+ const insert=await db.from('product_variant_media').insert({product_id:selected.id,variant_type:selectedType,media_type:isVideo?'video':'image',media_url:link}).select('*');
+ if(insert.error){await db.storage.from('product-images').remove([path]);fail.push(file.name+': '+insert.error.message);continue;}
+ count++;
+}
+$('photos').value='';$('videos').value='';
+const mr=await db.from('product_variant_media').select('*').eq('product_id',selected.id);
+if(!mr.error)mediaRows=mr.data||[];renderMedia();
+message(count+' dosya yüklendi.'+(fail.length?' Başarısız: '+fail.join(' | '):''),!!fail.length);
+}
+async function importMissing(){
+await assertAdmin();
+const current=new Set(list.map(p=>String(p.product_code||'').trim().toLocaleLowerCase('tr')));
+const missing=original.filter(p=>!current.has(String(p.code).toLocaleLowerCase('tr')));
+if(!missing.length){message('Eski katalogdaki bütün çeşitler zaten Supabase listesinde.');return;}
+if(!confirm('Eski katalogdaki '+missing.length+' eksik çeşidi Supabase ürünlerine eklemek istiyor musun? Mevcut ürünler ve medya silinmeyecek.'))return;
+let added=0;const fail=[];
+for(const p of missing){
+ const q=await db.from('products').insert({name:p.name,product_code:String(p.code),approval_status:'approved'}).select('id');
+ if(q.error)fail.push(p.name+': '+q.error.message);else if(q.data?.length)added++;
+}
+await loadProducts();
+message(added+' eksik katalog ürünü eklendi.'+(fail.length?' Eklenemeyenler: '+fail.join(' | '):''),!!fail.length);
+}
+$('login-form').addEventListener('submit',async e=>{e.preventDefault();const r=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});$('password').value='';if(r.error){message(r.error.message,true);return;}await session()});
+$('product').addEventListener('change',()=>chooseProduct().catch(e=>message(e.message,true)));
+$('filter').addEventListener('input',filterProducts);
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{selectedType=b.dataset.type;renderType()}));
+$('save-general').onclick=()=>saveDescription().then(()=>message('Genel açıklama kaydedildi.')).catch(e=>message(e.message,true));
+$('save-form').onclick=()=>saveForm().catch(e=>message('Kaydetme hatası: '+e.message,true));
+$('upload-media').onclick=()=>uploadMedia().catch(e=>message('Medya yükleme hatası: '+e.message,true));
+$('import').onclick=()=>importMissing().catch(e=>message('İçe aktarma hatası: '+e.message,true));
+$('reload').onclick=()=>loadProducts().catch(e=>message(e.message,true));
+$('logout').onclick=()=>db.auth.signOut().then(session);
+session().catch(e=>message(e.message,true));
+</script></body></html>

@@ -39,7 +39,14 @@ if(productId==='5435f3a7-bed1-43c3-9b34-110f1dff0201'){
  const approved=['90157370-e298-48df-ad6a-a5ba5756873c.jpg','9a9719b8-d271-4226-833b-75b508d3fd80.jpg','dd01b9b2-b160-47fb-91f1-7302547b2827.jpg'];
  el('gallery').replaceChildren();
  approved.forEach((filename,i)=>{const box=document.createElement('div');box.className='photoCard';const img=document.createElement('img');img.src=base+filename;img.alt='Deneme 998 onaylı fotoğraf '+(i+1);img.loading='lazy';const cap=document.createElement('p');cap.textContent='Onaylı fotoğraf '+(i+1);box.append(img,cap);el('gallery').append(box)});
- galleryStatus('Deneme 998: Yalnızca onaylanan 3 fotoğraf gösteriliyor. Eski kayıtlar görünümden çıkarıldı; veritabanından silinmedi.');
+ 
+// Existing approved cutting video in Storage; no re-upload or database mutation.
+const videoBox=document.createElement('div');videoBox.className='photoCard';videoBox.style.width='min(100%,420px)';videoBox.style.gridColumn='1 / -1';
+const videoTitle=document.createElement('p');videoTitle.textContent='Onaylı video (21 saniye)';
+const video=document.createElement('video');video.controls=true;video.preload='metadata';video.playsInline=true;video.style.width='100%';video.style.maxHeight='500px';video.style.objectFit='contain';
+video.src=base+'eb80c101-52ae-4ce6-b859-08f5543aa8bb.mp4';
+videoBox.append(videoTitle,video);el('gallery').append(videoBox);
+galleryStatus('Deneme 998: Yalnızca onaylanan 3 fotoğraf ve 1 video gösteriliyor. Eski kayıtlar görünümden çıkarıldı; veritabanından silinmedi.');
  return;
 }
 galleryStatus(galleryRows.length?galleryRows.length+' fotoğraf bulundu.':'Fotoğraf bulunamadı. Ürün onay bekliyorsa yönetici SELECT izni eksik olabilir.');for(let i=0;i<galleryRows.length;i++){const row=galleryRows[i],box=document.createElement('div');box.className='photoCard';const img=document.createElement('img');img.src=row.image_url;img.alt='Ürün fotoğrafı '+(i+1);img.loading='lazy';const cap=document.createElement('p');cap.textContent='Sıra: '+(i+1);const actions=document.createElement('div');actions.className='row';const up=document.createElement('button');up.className='secondary';up.textContent='↑';up.title='Öne al';up.disabled=i===0;up.onclick=()=>moveImage(i,-1);const down=document.createElement('button');down.className='secondary';down.textContent='↓';down.title='Arkaya al';down.disabled=i===galleryRows.length-1;down.onclick=()=>moveImage(i,1);const del=document.createElement('button');del.className='danger';del.textContent='Sil';del.onclick=()=>deleteImage(row);actions.append(up,down,del);box.append(img,cap,actions);el('gallery').append(box)}}

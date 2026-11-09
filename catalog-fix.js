@@ -28,9 +28,17 @@ if (!rows.length) return;
     for(const p of rows){
       const id=idByCode.get(String(p.code));
       const items=media.filter(m=>m.product_id===id && m.media_url);
-      const photos=[...new Set(items.filter(m=>m.media_type==='image').map(m=>m.media_url))];
-      const videos=[...new Set(items.filter(m=>m.media_type==='video').map(m=>m.media_url))];
-      if(photos.length){p.gallery=photos;p.img=photos[0];}
+      let photos=[...new Set(items.filter(m=>m.media_type==='image').map(m=>m.media_url))];
+      let videos=[...new Set(items.filter(m=>m.media_type==='video').map(m=>m.media_url))];
+      if(String(p.code)==='998'){
+        const validPath='/variants/5435f3a7-bed1-43c3-9b34-110f1dff0201/cutting/';
+        photos=photos.filter(u=>u.includes(validPath));
+        videos=videos.filter(u=>u.includes(validPath));
+      }
+      if(photos.length){
+        p.gallery=[...new Set([...(p.gallery||(p.img?[p.img]:[])),...photos])];
+        if(!p.img)p.img=photos[0];
+      }
       p.videos=videos;
     }
     render();

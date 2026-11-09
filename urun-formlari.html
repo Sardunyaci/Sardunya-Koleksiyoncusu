@@ -39,7 +39,9 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 <p class="row"><button id="reload" class="secondary" type="button">Listeyi yenile</button><button id="import" class="secondary" type="button">Eski katalogdaki eksik ürünleri ekle</button><button id="logout" class="secondary" type="button">Çıkış yap</button></p>
 <p class="muted small">Eski katalogdaki 27 çeşit hâlâ ana sayfada görünür. Yönetmek istediğin çeşit Supabase'de yoksa “eksik ürünleri ekle” ile kaydedebilirsin. Mevcut kayıtlar tekrar oluşturulmaz.</p></section>
 <section id="editor" class="hidden">
-<section class="card"><h2 id="selected-name">Ürün</h2><p id="selected-meta" class="muted"></p><a id="preview" class="button secondary" target="_blank" rel="noopener">Müşteri sayfasını aç</a><hr><h3>Çeşit Açıklaması</h3><p class="muted small">Bu açıklama her üç ürün formunun altında görünür. Çeşidi, çiçek özelliklerini ve yetiştirme notlarını buraya yaz.</p><textarea id="general" placeholder="Örnek: Bu koleksiyon çeşidi, çiçek yapısı ve dekoratif görünümüyle öne çıkar. Fotoğraflar temsil edilen çeşidi gösterir; gönderilecek bitkinin formu ayrıca seçilir."></textarea><p><button id="save-general" type="button">Genel açıklamayı kaydet</button></p><p id="general-save-status" class="notice" role="status" aria-live="polite">Açıklama henüz bu oturumda kaydedilmedi.</p></section>
+<section class="card"><h2 id="selected-name">Ürün</h2><p id="selected-meta" class="muted"></p><a id="preview" class="button secondary" target="_blank" rel="noopener">Müşteri sayfasını aç</a>
+<p><button id="publish-variants" type="button">Kaydedilmiş fiyat ve stokları müşteri sayfasına yayımla</button></p>
+<p id="publish-status" class="notice" role="status" aria-live="polite">Mevcut fiyat ve stok kayıtlarını müşterilere göstermek için bir kez bu butona bas. Satışa hazır olmayan formlar kapalı kalır.</p><hr><h3>Çeşit Açıklaması</h3><p class="muted small">Bu açıklama her üç ürün formunun altında görünür. Çeşidi, çiçek özelliklerini ve yetiştirme notlarını buraya yaz.</p><textarea id="general" placeholder="Örnek: Bu koleksiyon çeşidi, çiçek yapısı ve dekoratif görünümüyle öne çıkar. Fotoğraflar temsil edilen çeşidi gösterir; gönderilecek bitkinin formu ayrıca seçilir."></textarea><p><button id="save-general" type="button">Genel açıklamayı kaydet</button></p><p id="general-save-status" class="notice" role="status" aria-live="polite">Açıklama henüz bu oturumda kaydedilmedi.</p></section>
 <section class="card"><h2>Ürün Formları</h2><div class="tabs">
 <button data-type="cutting" class="active" type="button">Çelik<span>Köklendirilmemiş</span></button>
 <button data-type="seedling" type="button">Fide<span>Genç bitki</span></button>
@@ -105,8 +107,8 @@ function renderQuicklook(p,uploaded=[],media=[]){
 }
 function readDescription(p){
 const raw=p.description||p.product_description||'';
-if(typeof raw==='string'&&raw.startsWith('@SK1@')){try{const parsed=JSON.parse(raw.slice(5));return {general:String(parsed.general||''),forms:parsed.forms||{}}}catch{}}
-return {general:String(raw),forms:{}};
+if(typeof raw==='string'&&raw.startsWith('@SK1@')){try{const parsed=JSON.parse(raw.slice(5));return {general:String(parsed.general||''),forms:parsed.forms||{},publicVariants:parsed.publicVariants||{}}}catch{}}
+return {general:String(raw),forms:{},publicVariants:{}};
 }
 function recordsFor(type){return variantRows.filter(row=>alias[String(row.variant_type||'').toLocaleLowerCase('tr')]===type)}
 function renderType(){
@@ -143,7 +145,7 @@ async function chooseProduct(){
  $('editor').classList.remove('hidden');$('selected-name').textContent=p.name;
  $('selected-meta').textContent='Kod: '+(p.product_code||'—')+' · Onay: '+(p.approval_status||'—');
  $('preview').href='./urun-detay.html?code='+encodeURIComponent(p.product_code||'')+'&name='+encodeURIComponent(p.name||'');
- desc=readDescription(p);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';
+ desc=readDescription(p);$('general').value=desc.general;$('general-save-status').textContent='Açıklama henüz bu oturumda kaydedilmedi.';$('general-save-status').className='notice';$('publish-status').textContent='Kaydedilmis fiyat ve stok bilgilerini musteri sayfasina aktarmak icin yukaridaki butonu kullanabilirsin.';$('publish-status').className='notice';
  const [vr,mr,gr]=await Promise.all([
  db.from('product_variants').select('*').eq('product_id',id),
  db.from('product_variant_media').select('*').eq('product_id',id),
@@ -156,10 +158,61 @@ async function chooseProduct(){
  if((gr.data||[]).length||mediaRows.some(x=>x.media_type==='image'))renderQuicklook(p,gr.data||[],mediaRows);
  if(!vr.error&&!mr.error)message('“'+p.name+'” için üç form açıldı.');
 }
+function publicVariantsFromRows(rows){
+ // Ayni forma ait birden fazla kayit uyusmuyorsa yayina satis bilgisi cikmaz.
+ const result={};
+ for(const type of types){
+  const matches=rows.filter(r=>alias[String(r.variant_type||'').toLocaleLowerCase('tr')]===type);
+  if(!matches.length)continue;
+  const normalized=matches.map(r=>{
+   const p=r.price_tl??r.price,st=r.stock_quantity??r.stock;
+   const price=p===null||p===undefined||p===''?null:Number(p);
+   const stock=st===null||st===undefined||st===''?null:Number(st);
+   const validPrice=price===null||(Number.isFinite(price)&&price>=0);
+   const validStock=stock===null||(Number.isInteger(stock)&&stock>=0);
+   const duplicateConflict=(r.price_tl!=null&&r.price!=null&&Number(r.price_tl)!==Number(r.price))||(r.stock_quantity!=null&&r.stock!=null&&Number(r.stock_quantity)!==Number(r.stock));
+   return {price,stock,valid:validPrice&&validStock&&!duplicateConflict,available:r.is_available===true,sale:r.on_sale===true};
+  });
+  const first=normalized[0];
+  if(!normalized.every(v=>v.valid&&v.price===first.price&&v.stock===first.stock&&v.available===first.available&&v.sale===first.sale))continue;
+  const active=first.available&&first.sale&&first.price>0&&first.stock>0;
+  result[type]={price_tl:first.price,stock_quantity:first.stock,is_available:active,on_sale:active};
+ }
+ return result;
+}
+async function writePublicVariantSnapshot(productId,base,rows){
+ const approved={...base,publicVariants:publicVariantsFromRows(rows)};
+ const string='@SK1@'+JSON.stringify(approved);
+ const write=await db.from('products').update({description:string}).eq('id',productId).select('id,description');
+ if(write.error||!write.data?.length)throw Error('Musteri gosterimi kaydedilemedi: '+(write.error?.message||'Yetki sorunu'));
+ const read=await db.from('products').select('description').eq('id',productId).single();
+ if(read.error||read.data?.description!==string)throw Error('Musteri sayfasi icin yayin kaydi dogrulanamadi.');
+ return {approved,string};
+}
+async function publishSavedVariants(){
+ if(!selected)throw Error('Once bir urun secmelisin.');
+ await assertAdmin();
+ const id=selected.id;
+ const [q,p]=await Promise.all([
+  db.from('product_variants').select('*').eq('product_id',id),
+  db.from('products').select('description,approval_status').eq('id',id).single()
+ ]);
+ if(q.error)throw Error('Kayitli fiyat ve stok bilgileri okunamadi: '+q.error.message);
+ if(p.error)throw Error('Urun aciklamasi okunamadi: '+p.error.message);
+ if(p.data?.approval_status!=='approved')throw Error('Urun onayli degil. Once urunu onayla.');
+ if(!q.data?.length)throw Error('Bu urunde henuz kaydedilmis fiyat/stok formu yok.');
+ const publicRows=publicVariantsFromRows(q.data);
+ if(!Object.keys(publicRows).length)throw Error('Kayitli varyantlar birbiriyle celisiyor. Yayinlamadan once duzelt.');
+ if(!confirm('Kaydedilmis fiyat, stok ve satis durumunu musteri sayfasina aktarmak istiyor musun? Satis onayli formlarda WhatsApp siparisi acilabilir.'))return false;
+ const fresh=readDescription({description:p.data.description});
+ const published=await writePublicVariantSnapshot(id,fresh,q.data);
+ selected.description=published.string;desc=published.approved;variantRows=q.data;
+ return true;
+}
 async function saveDescription(){
 if(!selected)throw Error('Ürün seçmelisin.');
 await assertAdmin();
-const payload={general:$('general').value.trim(),forms:desc.forms};
+const payload={...desc,general:$('general').value.trim(),forms:desc.forms};
 const string='@SK1@'+JSON.stringify(payload);
 const productId=selected.id;
 const q=await db.from('products').update({description:string}).eq('id',productId).select('id,description');
@@ -200,8 +253,10 @@ if(verified.length!==Math.max(matches.length,1)||!verified.every(row=>
 (Number(row.stock_quantity??row.stock)===stock||(stock===null&&equal(row.stock_quantity??row.stock)))&&
 row.is_available===active&&row.on_sale===active)
 ||prRead.data.description!==string)throw Error('Kaydedilen verilerin tümü doğrulanamadı.');
-desc=description;selected.description=string;variantRows=vr.data;renderType();
-message(labels[selectedType]+' için fiyat, stok, satış durumu ve açıklama kaydedildi; Supabase üzerinden kontrol edildi.');
+// Dogrulanmis fiyat/stok bilgisini ziyaretcinin okuyabildigi onayli urun kaydina da koy.
+const published=await writePublicVariantSnapshot(selected.id,description,vr.data);
+desc=published.approved;selected.description=published.string;variantRows=vr.data;renderType();
+message(labels[selectedType]+' icin fiyat, stok, satis durumu ve aciklama dogrulandi ve musteri gosterimine yayimlandi.');
 }
 async function uploadMedia(){
 if(!selected)throw Error('Ürün seçmelisin.');await assertAdmin();
@@ -260,6 +315,15 @@ $('save-general').onclick=async()=>{
  }finally{btn.disabled=false;btn.textContent='Genel açıklamayı kaydet';}
 };
 $('save-form').onclick=async()=>{const out=$('form-save-status'),btn=$('save-form');btn.disabled=true;out.textContent='Kaydediliyor…';out.className='notice';try{await saveForm();out.textContent='✓ Kayıt güncellendi ve Supabase üzerinden doğrulandı.';out.className='notice';}catch(e){out.textContent='✕ Kaydedilemedi: '+e.message;out.className='notice err';message(e.message,true)}finally{btn.disabled=false}};
+$('publish-variants').onclick=async()=>{
+ const btn=$('publish-variants'),out=$('publish-status');
+ btn.disabled=true;out.textContent='Kayitli bilgiler karsilastiriliyor…';out.className='notice';
+ try{const did=await publishSavedVariants();
+  if(did){out.textContent='✓ Fiyat, stok ve satis durumu musteri gosterimine aktarildi; veritabanindan geri okunarak dogrulandi.';out.className='notice';message('Musteri sayfasi icin yayin bilgileri guncellendi.');}
+  else{out.textContent='Yayinlama iptal edildi.';}}
+ catch(e){out.textContent='✕ Yayinlanamadi: '+e.message;out.className='notice err';message('Yayinlama hatasi: '+e.message,true)}
+ finally{btn.disabled=false}
+};
 $('upload-media').onclick=()=>uploadMedia().catch(e=>message('Medya yükleme hatası: '+e.message,true));
 $('import').onclick=()=>importMissing().catch(e=>message('İçe aktarma hatası: '+e.message,true));
 $('reload').onclick=()=>loadProducts().catch(e=>message(e.message,true));

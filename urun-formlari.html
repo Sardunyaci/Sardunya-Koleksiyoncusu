@@ -101,7 +101,7 @@ function renderBulkList(){
  const arr=bulkCandidates(),box=$('bulk-list');box.replaceChildren();
  const missing=list.filter(missingGeneral).length;
  const registered=new Set(allVariantBrief.map(x=>x.product_id));
- $('bulk-summary').textContent=list.length+' çeşit · '+missing+' genel açıklama kontrolü gerekli · '+(list.length-[...registered].filter(id=>list.some(p=>p.id===id)).length)+' ürün için form kontrol bilgisi mevcut. Görüntülenen: '+arr.length;
+ $('bulk-summary').textContent=list.length+' çeşit · '+missing+' genel açıklama kontrolü gerekli · '+([...registered].filter(id=>list.some(p=>p.id===id)).length)+' üründe form kaydı mevcut. Görüntülenen: '+arr.length;
  if(!arr.length)box.textContent='Aramayla eşleşen ürün bulunamadı.';
  for(const p of arr){
   const button=document.createElement('button');button.type='button';button.className='bulk-item'+(p.id===selected?.id?' current':'');

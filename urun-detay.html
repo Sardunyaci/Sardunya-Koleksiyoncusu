@@ -46,9 +46,9 @@ const amount=(r)=>{const x=r?.price_tl??r?.price;return x!==null&&x!==undefined&
 const quantity=(r)=>{const x=r?.stock_quantity??r?.stock;return x!==null&&x!==undefined&&x!==''&&Number.isInteger(Number(x))&&Number(x)>=0?Number(x):null};
 const p=warn?null:amount(row),q=warn?null:quantity(row);
 const inquiry=!warn&&selected==='seedling'&&whatsappSeedling&&q>0&&productCode!=='998';
-el('price-label').textContent=inquiry?'Fiyat: WhatsApp üzerinden öğrenin':p!==null?'Fiyat: '+p.toLocaleString('tr-TR')+' TL':'Fiyat: Henüz belirlenmedi';
+el('price-label').textContent=whatsappSeedling?'Fiyat: WhatsApp üzerinden öğrenin':p!==null?'Fiyat: '+p.toLocaleString('tr-TR')+' TL':'Fiyat: Henüz belirlenmedi';
 el('stock-label').textContent=warn?'Stok: Doğrulama gerekli':q!==null?'Stok: '+q+' adet':'Stok: Bilgi girilmedi';
-const ready=!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&productCode!=='998';
+const ready=!whatsappSeedling&&!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&productCode!=='998';
 el('sale-label').textContent=warn?'Satış durumu: Çelişkili kayıtlar kontrol ediliyor':productCode==='998'?'Satış durumu: Test ürünü — satış kapalı':inquiry?'WhatsApp üzerinden fide sipariş talebi açık':ready?'Satış durumu: Sipariş talebine açık':'Satış durumu: Şu anda satışa kapalı';
 el('quantity').max=q>0?q:1;if(Number(el('quantity').value)>Number(el('quantity').max)||Number(el('quantity').value)<1)el('quantity').value=1;
 el('quantity').disabled=!(ready||inquiry);

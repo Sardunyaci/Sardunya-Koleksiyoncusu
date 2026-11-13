@@ -141,7 +141,7 @@ function selectBulkProduct(id){
  chooseProduct().catch(e=>message('Ürün seçimi hatası: '+e.message,true));
 }
 function nextFidePhoto(){
- const candidates=list.filter(p=>String(p.product_code||'')!=='998'&&!/^deneme(?:\\b|\\s|\\d)/i.test(String(p.name||''))&&missingFidePhoto(p));
+ const candidates=list.filter(p=>String(p.product_code||'')!=='998'&&!String(p.name||'').trim().toLocaleLowerCase('tr').startsWith('deneme')&&missingFidePhoto(p));
  if(!candidates.length){message('Fotoğrafı eksik Fide kalmadı.');return}
  const current=candidates.findIndex(p=>p.id===selected?.id);
  const target=candidates[(current+1)%candidates.length];

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Üye Kayıt ve Giriş | Sardunya Koleksiyoncusu</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#173c31;background:#f3f7f3}*{box-sizing:border-box}
+body{margin:0;min-height:100vh}a{color:#075d48}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:17px max(18px,5vw);background:#fff;box-shadow:0 1px 14px #173c3116}
+.brand{font:bold 23px Georgia,serif;text-decoration:none;color:#173c31}.brand span{color:#aa8351}.back{font-size:14px;text-decoration:none;font-weight:bold}
+main{max-width:1020px;margin:35px auto;padding:0 18px 40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(330px,.9fr);gap:25px;align-items:start}
+.intro{background:linear-gradient(145deg,#143e30,#2e6247);color:#fff;border-radius:17px;padding:34px;min-height:355px}
+.intro h1{font:normal clamp(31px,4vw,48px) Georgia,serif;margin:8px 0 15px}.intro p{line-height:1.8;color:#dcece2}
+.intro a{color:white;text-decoration:underline}.card{background:#fff;border:1px solid #d8e7db;box-shadow:0 8px 28px #153a2512;border-radius:17px;padding:27px;min-width:0}
+.tabs{display:flex;gap:7px;margin-bottom:23px}.tabs button{flex:1;background:#ecf5ee;border:1px solid #b3d4c1;color:#145036;padding:13px 8px;border-radius:9px;font:bold 15px Arial;cursor:pointer}
+.tabs button[aria-selected="true"]{background:#075d48;color:#fff}.form{display:grid;gap:13px}.form[hidden],#account[hidden],#recovery-panel[hidden],#auth-area[hidden]{display:none}
+label{font-size:14px;font-weight:bold}input{width:100%;padding:13px;border:1px solid #b5ccbb;border-radius:8px;font:inherit;background:#fff}
+button.primary{background:#075d48;color:white;border:0;border-radius:9px;padding:14px 18px;font:700 15px Arial;cursor:pointer;width:100%}
+button:disabled{opacity:.6;cursor:progress}.secondary{color:#075d48;background:white;border:1px solid #a1c2ae;border-radius:8px;padding:12px;text-decoration:none;cursor:pointer;font:700 14px Arial;text-align:center}
+.help{font-size:13px;line-height:1.65;color:#5b7564}.help a{font-weight:bold}.message{margin:16px 0 0;background:#edf6ed;border-radius:9px;padding:12px;line-height:1.5;font-size:14px;overflow-wrap:anywhere}.message.error{background:#ffeded;color:#923a2f}.message[hidden]{display:none}
+#account h2,#recovery-panel h2{font:normal 29px Georgia,serif}#account p{overflow-wrap:anywhere;line-height:1.6}
+.actions{display:flex;flex-direction:column;gap:10px}.tiny{font-size:12px;color:#708777;line-height:1.6}
+:focus-visible{outline:3px solid #c89e58;outline-offset:2px}
+@media(max-width:810px){main{grid-template-columns:minmax(0,1fr);max-width:570px;margin:20px auto}.intro{min-height:0;padding:22px}.intro h1{font-size:32px}}
+@media(max-width:440px){header{padding:14px}.brand{font-size:18px}main{padding:0 10px 24px;gap:13px}.card{padding:18px}.intro{padding:19px}.tabs button{font-size:14px}}
+</style></head>
+<body>
+<header><a class="brand" href="./index.html">✿ Sardunya <span>Koleksiyoncusu</span></a><a class="back" href="./index.html">← Kataloğa Dön</a></header>
+<main>
+<section class="intro"><p class="tiny" style="color:#cde3d4;letter-spacing:2px">SARDUNYA TOPLULUĞU</p><h1>Koleksiyona katılın.</h1><p>Ücretsiz kullanıcı hesabınızı oluşturun veya mevcut hesabınıza giriş yapın. Sardunya kataloğumuzu keşfetmeye devam edin.</p><p><strong>Bilgilendirme:</strong> Standart, Premium ve VIP dergi abonelikleri ve ücretli ödeme sistemi henüz etkin değil. Kayıt olmak ücretli abonelik başlatmaz.</p><a href="./index.html#uyelik">Üyelik paketlerini incele</a></section>
+<section class="card">
+<div id="auth-area" hidden>
+<div class="tabs" role="tablist" aria-label="Üyelik işlemleri">
+<button id="tab-login" type="button" role="tab" aria-selected="true">Giriş Yap</button>
+<button id="tab-signup" type="button" role="tab" aria-selected="false">Kayıt Ol</button>
+</div>
+<form id="login-form" class="form" autocomplete="on">
+<label for="login-email">E-posta</label><input id="login-email" type="email" autocomplete="email" required maxlength="254">
+<label for="login-password">Şifre</label><input id="login-password" type="password" autocomplete="current-password" required>
+<button id="login-submit" class="primary" type="submit">Giriş Yap</button>
+<button id="phone-login-open" class="secondary" type="button">📱 Telefon Numarasıyla Giriş</button>
+<button id="forgot-open" class="secondary" type="button">Şifremi Unuttum</button>
+</form>
+<form id="signup-form" class="form" hidden autocomplete="on">
+<label for="signup-email">E-posta</label><input id="signup-email" type="email" autocomplete="email" required maxlength="254">
+<label for="signup-password">Şifre (en az 12 karakter)</label><input id="signup-password" type="password" minlength="12" autocomplete="new-password" required>
+<label for="signup-repeat">Şifre Tekrar</label><input id="signup-repeat" type="password" minlength="12" autocomplete="new-password" required>
+<button id="signup-submit" class="primary" type="submit">E-posta ile Kayıt Ol</button>
+<button id="phone-signup-open" class="secondary" type="button">📱 Telefon Numarasıyla Kayıt Ol (E-posta Gerekmez)</button>
+<p class="help">Kayıttan sonra Supabase e-posta doğrulaması isteyebilir. Gelen kutunuzu kontrol edin.</p>
+</form>
+<form id="phone-form" class="form" hidden>
+<h2 id="phone-heading" style="margin:0;font:normal 25px Georgia,serif">Telefon ile Kayıt Ol</h2>
+<p class="help">E-posta gerekmiyor. Numaranızı ülke koduyla yazın: Türkiye +90, Çekya +420, Bulgaristan +359 vb. SMS koduyla doğrulama için sitenin SMS hizmeti etkin olmalıdır.</p>
+<label for="phone-number">Cep Telefonu Numaranız</label>
+<input id="phone-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="+90 5XX XXX XX XX" required>
+<button id="phone-send" class="primary" type="submit">SMS Doğrulama Kodu Gönder</button>
+<button id="phone-back" class="secondary" type="button">Önceki Ekrana Dön</button>
+</form>
+<form id="phone-verify-form" class="form" hidden>
+<h2 style="margin:0;font:normal 25px Georgia,serif">SMS Doğrulama</h2>
+<p class="help" id="phone-confirmation">Telefonunuza gelen kodu girin.</p>
+<label for="phone-otp">SMS Doğrulama Kodu</label>
+<input id="phone-otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" minlength="6" maxlength="8" placeholder="6 haneli kod" required>
+<button id="phone-verify" class="primary" type="submit">Doğrula ve Devam Et</button>
+<button id="phone-resend" class="secondary" type="button">Kodu Tekrar Gönder</button>
+<button id="phone-change" class="secondary" type="button">Numarayı Değiştir</button>
+<p class="tiny">SMS gelmiyorsa operatör veya SMS gönderim ayarlarını kontrol edin. Yeni SMS isteğinde kısa bekleme sınırı olabilir.</p>
+</form>
+<form id="forgot-form" class="form" hidden>
+<h2 style="margin:0;font:normal 25px Georgia,serif">Şifre Yenileme</h2><p class="help">E-posta adresinize şifre yenileme bağlantısı gönderilir.</p>
+<label for="forgot-email">E-posta</label><input id="forgot-email" type="email" autocomplete="email" required maxlength="254">
+<button id="forgot-submit" class="primary" type="submit">Sıfırlama Bağlantısı Gönder</button>
+<button id="forgot-back" class="secondary" type="button">Giriş Ekranına Dön</button>
+</form>
+</div>
+<div id="account" hidden>
+<h2>Üye Hesabım</h2><p>Giriş yapılan hesap: <strong id="member-identity"></strong></p>
+<p class="help">Hesabınız açık. Ücretli dergi aboneliği henüz başlatılmadı; ödeme ve paket hakları ileride etkinleştirilecek.</p>
+<div class="actions"><a class="secondary" href="./index.html#koleksiyon">Kataloğa Git</a><button id="logout" class="primary" type="button">Çıkış Yap</button></div>
+</div>
+<div id="recovery-panel" hidden>
+<h2>Yeni Şifre Belirle</h2>
+<form id="recovery-form" class="form">
+<label for="recovery-password">Yeni şifre (en az 12 karakter)</label><input id="recovery-password" type="password" minlength="12" autocomplete="new-password" required>
+<label for="recovery-repeat">Yeni şifre tekrar</label><input id="recovery-repeat" type="password" minlength="12" autocomplete="new-password" required>
+<button id="recovery-submit" class="primary" type="submit">Şifremi Değiştir</button></form>
+</div>
+<p id="message" role="status" aria-live="polite" class="message" hidden></p>
+</section>
+</main>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';
+const sb=createClient('https://qhhvhuomfqhkrvcwxwgp.supabase.co','sb_publishable_0xXY9QFQdcpqFeBpYhthvw_aa2_Vene');
+const $=id=>document.getElementById(id);
+const authUrl=new URL('uyelik.html',location.href).href;
+const recoveryUrl=new URL('uyelik.html?mode=recovery',location.href).href;
+let mode='login',busy=false,phonePurpose='signup',pendingPhone='',lastOtpRequestAt=0;
+function status(text,error=false){const box=$('message');box.textContent=text;box.classList.toggle('error',error);box.hidden=!text;}
+function setBusy(v){busy=v;for(const id of ['login-submit','signup-submit','forgot-submit','recovery-submit','logout','phone-send','phone-verify','phone-resend'])$(id).disabled=v;}
+function showMode(next){
+ mode=next;
+ $('auth-area').hidden=false;$('account').hidden=true;$('recovery-panel').hidden=true;
+ $('login-form').hidden=next!=='login';$('signup-form').hidden=next!=='signup';$('forgot-form').hidden=next!=='forgot';
+ $('phone-form').hidden=next!=='phone';$('phone-verify-form').hidden=next!=='phone-verify';
+ $('tab-login').setAttribute('aria-selected',String(next==='login'));
+ $('tab-signup').setAttribute('aria-selected',String(next==='signup'));
+}
+async function syncSession(){
+ const {data,error}=await sb.auth.getUser();
+ const recovery=new URLSearchParams(location.search).get('mode')==='recovery'||new URLSearchParams(location.hash.slice(1)).get('type')==='recovery';
+ if(recovery){
+  $('auth-area').hidden=true;$('account').hidden=true;$('recovery-panel').hidden=!data?.user;
+  if(!data?.user)status('Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş. Yeni bağlantı isteyin.',true);
+  return;
+ }
+ if(error&&!data?.user){showMode(mode);return;}
+ if(data?.user){
+  $('auth-area').hidden=true;$('recovery-panel').hidden=true;$('account').hidden=false;
+  $('member-identity').textContent=data.user.email||data.user.phone||'Doğrulanmış üye';return;
+ }
+ showMode(mode);
+}
+$('tab-login').onclick=()=>{showMode('login');location.hash='giris';status('')};
+$('tab-signup').onclick=()=>{showMode('signup');location.hash='kayit';status('')};
+$('forgot-open').onclick=()=>{showMode('forgot');status('')};
+$('forgot-back').onclick=()=>{showMode('login');status('')};
+function normalizePhone(raw){
+ const v=String(raw||'').trim().replace(/[()\s.\-]/g,'');
+ if(/^\+[1-9]\d{7,14}$/.test(v))return v;
+ if(/^05\d{9}$/.test(v))return '+90'+v.slice(1);
+ if(/^5\d{9}$/.test(v))return '+90'+v;
+ throw Error('Telefon numaranızı ülke koduyla yazın: +905XXXXXXXXX. Türkiye içi 05XXXXXXXXX formatı da kabul edilir.');
+}
+function showPhone(purpose){
+ phonePurpose=purpose;pendingPhone='';
+ $('phone-heading').textContent=purpose==='signup'?'Telefon ile Ücretsiz Kayıt Ol':'Telefon ile Giriş Yap';
+ $('phone-send').textContent=purpose==='signup'?'SMS Gönder ve Ücretsiz Kayıt Ol':'SMS ile Giriş Yap';
+ showMode('phone');status('');
+}
+$('phone-login-open').onclick=()=>showPhone('login');
+$('phone-signup-open').onclick=()=>showPhone('signup');
+$('phone-back').onclick=()=>{showMode(phonePurpose==='signup'?'signup':'login');status('')};
+$('phone-change').onclick=()=>{showMode('phone');status('')};
+async function requestOtp(phone,createUser){
+ const {error}=await sb.auth.signInWithOtp({phone,options:{shouldCreateUser:createUser,channel:'sms'}});
+ if(error)throw error;
+ lastOtpRequestAt=Date.now();
+}
+$('phone-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;
+ let phone;try{phone=normalizePhone($('phone-number').value)}catch(error){status(error.message,true);return}
+ setBusy(true);status('SMS doğrulama kodu isteniyor…');
+ try{
+  await requestOtp(phone,phonePurpose==='signup');pendingPhone=phone;
+  $('phone-confirmation').textContent=phone+' numarasına gelen SMS kodunu girin.';
+  $('phone-otp').value='';showMode('phone-verify');
+  status('Kod gönderme isteği kabul edildi. SMS gelmediyse telefon servisinin etkin olduğundan emin olun.');
+ }catch(error){status('SMS gönderilemedi: '+error.message+'. Supabase Telefon sağlayıcısı ve SMS hizmeti etkin olmalıdır.',true)}
+ finally{setBusy(false)}
+};
+$('phone-verify-form').onsubmit=async e=>{
+ e.preventDefault();if(busy||!pendingPhone)return;
+ const token=$('phone-otp').value.trim();
+ if(!/^\d{6,8}$/.test(token)){status('SMS kodunu rakamlarla, eksiksiz girin.',true);return}
+ setBusy(true);status('SMS kodunuz doğrulanıyor…');
+ try{
+  const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});
+  if(error)throw error;
+  if(!data?.session)throw Error('Doğrulama tamamlanmadı. Tekrar deneyin.');
+  $('phone-otp').value='';pendingPhone='';
+  status('Telefon numarası doğrulandı; üyelik oturumu açıldı.');
+  await syncSession();
+ }catch(error){status('Doğrulama başarısız: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('phone-resend').onclick=async()=>{
+ if(busy||!pendingPhone)return;
+ if(Date.now()-lastOtpRequestAt<60000){status('Yeni kod istemek için önceki SMS isteğinden sonra en az 60 saniye geçmeli.',true);return}
+ setBusy(true);status('Yeni SMS kodu isteniyor…');
+ try{await requestOtp(pendingPhone,phonePurpose==='signup');status('Yeni SMS kodu isteği alındı.')}
+ catch(error){status('SMS tekrar gönderilemedi: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('login-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;setBusy(true);status('Giriş kontrol ediliyor…');
+ try{const {error}=await sb.auth.signInWithPassword({email:$('login-email').value.trim(),password:$('login-password').value});if(error)throw error;$('login-password').value='';status('Giriş başarılı.');await syncSession()}
+ catch(error){status('Giriş yapılamadı: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('signup-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;
+ if($('signup-password').value!==$('signup-repeat').value){status('Şifreler aynı değil.',true);return}
+ setBusy(true);status('Kayıt oluşturuluyor…');
+ try{
+  const {data,error}=await sb.auth.signUp({email:$('signup-email').value.trim(),password:$('signup-password').value,options:{emailRedirectTo:authUrl}});
+  if(error)throw error;$('signup-password').value='';$('signup-repeat').value='';
+  if(data?.session){status('Üyeliğiniz oluşturuldu.');await syncSession()}
+  else{showMode('login');status('Kayıt talebi alındı. E-posta doğrulaması açıksa gelen kutunuzu kontrol edin.')}
+ }catch(error){status('Kayıt yapılamadı: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('forgot-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;setBusy(true);status('Bağlantı gönderiliyor…');
+ try{const {error}=await sb.auth.resetPasswordForEmail($('forgot-email').value.trim(),{redirectTo:recoveryUrl});if(error)throw error;status('Hesap kayıtlıysa şifre yenileme bağlantısı e-postanıza gönderilir. Gelen kutunuzu kontrol edin.')}
+ catch(error){status('İşlem yapılamadı: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('recovery-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;
+ if($('recovery-password').value!==$('recovery-repeat').value){status('Yeni şifreler aynı değil.',true);return}
+ setBusy(true);status('Şifreniz güncelleniyor…');
+ try{
+  const {error}=await sb.auth.updateUser({password:$('recovery-password').value});
+  if(error)throw error;
+  $('recovery-password').value='';$('recovery-repeat').value='';
+  await sb.auth.signOut({scope:'local'});
+  history.replaceState(null,'',authUrl+'#giris');showMode('login');
+  status('Şifreniz değiştirildi. Yeni şifrenizle giriş yapabilirsiniz.');
+ }catch(error){status('Şifre değiştirilemedi: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('logout').onclick=async()=>{if(busy)return;setBusy(true);const {error}=await sb.auth.signOut();if(error){status('Çıkış yapılamadı: '+error.message,true)}else{showMode('login');status('Çıkış yapıldı.')}setBusy(false)};
+sb.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'||event==='PASSWORD_RECOVERY')setTimeout(()=>syncSession(),0)});
+mode=location.hash==='#kayit'?'signup':'login';
+if(location.hash==='#telefon-kayit')showPhone('signup');
+else if(location.hash==='#telefon-giris')showPhone('login');
+else showMode(mode);
+syncSession().catch(error=>status('Oturum kontrolü yapılamadı: '+error.message,true));
+</script></body></html>

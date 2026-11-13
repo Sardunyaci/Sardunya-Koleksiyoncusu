@@ -221,6 +221,8 @@ $('recovery-form').onsubmit=async e=>{
 $('logout').onclick=async()=>{if(busy)return;setBusy(true);const {error}=await sb.auth.signOut();if(error){status('Çıkış yapılamadı: '+error.message,true)}else{showMode('login');status('Çıkış yapıldı.')}setBusy(false)};
 sb.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'||event==='PASSWORD_RECOVERY')setTimeout(()=>syncSession(),0)});
 mode=location.hash==='#kayit'?'signup':'login';
-showMode(mode);
+if(location.hash==='#telefon-kayit')showPhone('signup');
+else if(location.hash==='#telefon-giris')showPhone('login');
+else showMode(mode);
 syncSession().catch(error=>status('Oturum kontrolü yapılamadı: '+error.message,true));
 </script></body></html>

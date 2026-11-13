@@ -6,7 +6,7 @@ const sbUrl='https://qhhvhuomfqhkrvcwxwgp.supabase.co',sbKey='sb_publishable_0xX
 const knownRoot=sbUrl+'/storage/v1/object/public/product-images/variants/5435f3a7-bed1-43c3-9b34-110f1dff0201/cutting/';
 const knownPhotos=['90157370-e298-48df-ad6a-a5ba5756873c.jpg','9a9719b8-d271-4226-833b-75b508d3fd80.jpg','dd01b9b2-b160-47fb-91f1-7302547b2827.jpg'].map(f=>knownRoot+f);
 const types={cutting:{name:'Çelik (Köklendirilmemiş)',images:[],video:null},seedling:{name:'Fide (Genç Bitki)',images:[],video:null},mother:{name:'Anaç (Yetişkin Bitki)',images:[],video:null}};
-const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'};let formDescriptions={};let variants={};let formWarnings={};let publishedVariants={};
+const alias={cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'};let formDescriptions={};let variants={};let formWarnings={};let publishedVariants={};let whatsappSeedling=false;let seoMeta=null;
 const descriptions={cutting:'Köklendirme gerektiren çelik. Boyut, yaprak sayısı ve stok bilgisi satıcı tarafından doğrulanmalıdır.',seedling:'Genç, köklenmiş bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.',mother:'Gelişmiş anaç bitki. Güncel boyut, fotoğraf ve stok bilgisi satıcı tarafından doğrulanmalıdır.'};
 let selected='cutting',photo=0,productName='',productCode='',generalCover=null;
 let coverCandidates=[],failedCovers=new Set(),failedFormPhotos=new Set();
@@ -20,20 +20,20 @@ const el=id=>document.getElementById(id);
 // Kapak gorselleri ana katalogdaki mevcut 27 cesit ile eslesir. Eksik urun-formu fotograflari yerine sadece genel cicek fotografi gosterilir.
 const catalogCovers={"10":"https://images.prom.ua/1932751504_pelargoniya-zonalna-bold.jpg","31":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_31/red_pandora1.jpg","33":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_33/galina-33-1.jpg","34":"https://images.prom.ua/6620857703_yuv-elbrus-34.jpg","35":"https://images.prom.ua/1933486320_pelargoniya-tamara-geran.jpg","38":"https://images.prom.ua/6395593527_iv-maja-pliska.jpg","49":"https://images.prom.ua/7425435565_md-lyubochka-.jpg","81":"https://images.prom.ua/1934279425_pelargoniya-good-vibration.jpg","82":"https://images.prom.ua/6450625216_ta-emmanuel-82.jpg","94":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_94/ShYK_Grand_Prix.jpg","105":"https://images.prom.ua/6758569505_diaz-madrugada-105.jpg","110":"https://images.prom.ua/6758327919_by-karalovij-rif.jpg","121":"https://images.prom.ua/6574379756_nika-esmeralda-121.jpg","125":"https://images.prom.ua/6454369016_diaz-faramira-125.jpg","147":"https://images.prom.ua/6758153050_lara-delight-147.jpg","149":"https://images.prom.ua/7341982570_sim-praline-149.jpg","150":"https://images.prom.ua/7341902277_sim-harizma-150.jpg","154":"https://images.prom.ua/7601883615_ts-maya-154.jpg","192":"https://images.prom.ua/2697729416_odensjo-madame-bovary.jpg","194":"https://images.prom.ua/3612069060_194-yuv-bila.jpg","250":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_250/jogerhus_1.jpg","251":"https://images.prom.ua/3097729969_yug-printsesa-grejs.jpg","254":"https://images.prom.ua/3109433705_och-madpearl-white.jpg","264":"https://images.prom.ua/3615677864_pelargoniya-svit-orha.jpg","270":"https://images.prom.ua/6758333968_270-yu-nastasya.jpg","1243":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1243/1243-26.jpg","1704":"https://qhhvhuomfqhkrvcwxwgp.supabase.co/storage/v1/object/public/product-images/sardunya-arsiv/Kod_1704/1704-25.jpg"};
 const phone='905322606088';
-let currentReady=false,currentPrice=null;
-function updateContacts(ready,price){
-currentReady=ready;currentPrice=price;
+let currentReady=false,currentPrice=null,currentInquiry=false;
+function updateContacts(ready,price,inquiry=false){
+currentReady=ready;currentPrice=price;currentInquiry=inquiry;
 const title=productName+' (Kod: '+productCode+')';
 el('ask-link').href='https://wa.me/'+phone+'?text='+encodeURIComponent(title+' · '+types[selected].name+' hakkında bilgi almak istiyorum.');
-if(!ready)return;
+if(!ready&&!inquiry)return;
 updateOrder();
 }
 function updateOrder(){
-if(!currentReady)return;
+if(!currentReady&&!currentInquiry)return;
 const max=Math.max(1,Number(el('quantity').max)||1);
 const count=Math.max(1,Math.min(max,Math.trunc(Number(el('quantity').value)||1)));
 el('quantity').value=count;
-const summary=productName+' (Kod: '+productCode+')\nÜrün formu: '+types[selected].name+'\nAdet: '+count+'\nBirim fiyat: '+currentPrice+' TL\nToplam: '+(currentPrice*count).toLocaleString('tr-TR')+' TL\nSipariş talebi gönderiyorum. Stok ve ödeme detaylarını teyit etmek istiyorum.';
+const summary=currentInquiry?productName+' (Kod: '+productCode+')\nÜrün formu: Fide (köklenmiş genç bitki)\nTalep edilen adet: '+count+'\nFiyat bilgisini WhatsApp üzerinden öğrenmek ve bu fide için sipariş talebi oluşturmak istiyorum. Stok ve gönderim koşullarını teyit edelim.':productName+' (Kod: '+productCode+')\nÜrün formu: '+types[selected].name+'\nAdet: '+count+'\nBirim fiyat: '+currentPrice+' TL\nToplam: '+(currentPrice*count).toLocaleString('tr-TR')+' TL\nSipariş talebi gönderiyorum. Stok ve ödeme detaylarını teyit etmek istiyorum.';
 el('order-link').href='https://wa.me/'+phone+'?text='+encodeURIComponent(summary);
 }
 el('quantity').addEventListener('input',updateOrder);
@@ -45,15 +45,17 @@ const row=variants[selected],warn=formWarnings[selected];
 const amount=(r)=>{const x=r?.price_tl??r?.price;return x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x))&&Number(x)>0?Number(x):null};
 const quantity=(r)=>{const x=r?.stock_quantity??r?.stock;return x!==null&&x!==undefined&&x!==''&&Number.isInteger(Number(x))&&Number(x)>=0?Number(x):null};
 const p=warn?null:amount(row),q=warn?null:quantity(row);
-el('price-label').textContent=p!==null?'Fiyat: '+p.toLocaleString('tr-TR')+' TL':'Fiyat: Henüz belirlenmedi';
+const inquiry=!warn&&selected==='seedling'&&whatsappSeedling&&q>0&&productCode!=='998';
+el('price-label').textContent=whatsappSeedling?'Fiyat: WhatsApp üzerinden öğrenin':p!==null?'Fiyat: '+p.toLocaleString('tr-TR')+' TL':'Fiyat: Henüz belirlenmedi';
 el('stock-label').textContent=warn?'Stok: Doğrulama gerekli':q!==null?'Stok: '+q+' adet':'Stok: Bilgi girilmedi';
-const ready=!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&productCode!=='998';
-el('sale-label').textContent=warn?'Satış durumu: Çelişkili kayıtlar kontrol ediliyor':productCode==='998'?'Satış durumu: Test ürünü — satış kapalı':ready?'Satış durumu: Sipariş talebine açık':'Satış durumu: Şu anda satışa kapalı';
+const ready=!whatsappSeedling&&!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&productCode!=='998';
+el('sale-label').textContent=warn?'Satış durumu: Çelişkili kayıtlar kontrol ediliyor':productCode==='998'?'Satış durumu: Test ürünü — satış kapalı':inquiry?'WhatsApp üzerinden fide sipariş talebi açık':ready?'Satış durumu: Sipariş talebine açık':'Satış durumu: Şu anda satışa kapalı';
 el('quantity').max=q>0?q:1;if(Number(el('quantity').value)>Number(el('quantity').max)||Number(el('quantity').value)<1)el('quantity').value=1;
-el('quantity').disabled=!ready;
-el('order-link').hidden=!ready;
-el('buy-hint').textContent=ready?'Sipariş talebi WhatsApp üzerinden iletilir; ödeme ve kesin stok satıcı tarafından onaylanır.':warn?'Varyant kayıtları tutarlı olmadığından sipariş kapalı.':'Satışa hazır olmayan çeşitler için bilgi alabilirsiniz.';
-updateContacts(ready,p);
+el('quantity').disabled=!(ready||inquiry);
+el('order-link').hidden=!(ready||inquiry);
+el('order-link').textContent=inquiry?'WhatsApp ile Fide Sipariş Talebi':'WhatsApp ile Sipariş Ver';
+el('buy-hint').textContent=inquiry?'Fiyat sitede gösterilmez. WhatsApp sipariş talebi ücretsizdir; kesin fiyat, stok ve ödeme satıcı tarafından teyit edilir.':ready?'Sipariş talebi WhatsApp üzerinden iletilir; ödeme ve kesin stok satıcı tarafından onaylanır.':warn?'Varyant kayıtları tutarlı olmadığından sipariş kapalı.':'Satışa hazır olmayan çeşitler için bilgi alabilirsiniz.';
+updateContacts(ready,p,inquiry);
 
 const formPhoto=item.images[photo];
 const hasFormPhoto=!!formPhoto&&!failedFormPhotos.has(formPhoto);
@@ -107,7 +109,7 @@ if(gi&&gi.ok){try{const photos=await gi.json();addCovers(photos.map(x=>x.image_u
 if(mr&&mr.ok){const media=await mr.json();for(const m of media){const type=({cutting:'cutting',celik:'cutting','çelik':'cutting',seedling:'seedling',fide:'seedling',mother:'mother',anac:'mother','anaç':'mother'})[String(m.variant_type||'').toLocaleLowerCase('tr')];if(!type||!m.media_url)continue;if(m.media_type==='image'&&!types[type].images.includes(m.media_url))types[type].images.push(m.media_url);if(m.media_type==='video'&&!types[type].video)types[type].video=m.media_url;}}
 const desc=p.description||p.product_description;
 if(typeof desc==='string'&&desc.trim()){
- if(desc.startsWith('@SK1@')){try{const d=JSON.parse(desc.slice(5));el('product-description').textContent=d.general||'Genel açıklama henüz eklenmedi.';formDescriptions=d.forms||{};publishedVariants=d.publicVariants||{};}catch{el('product-description').textContent='Açıklama okunamadı; yönetim panelinden kontrol edilmeli.';}}
+ if(desc.startsWith('@SK1@')){try{const d=JSON.parse(desc.slice(5));el('product-description').textContent=d.general||'Genel açıklama henüz eklenmedi.';formDescriptions=d.forms||{};publishedVariants=d.publicVariants||{};whatsappSeedling=d.whatsappSeedling===true;seoMeta=d.seo||null;}catch{el('product-description').textContent='Açıklama okunamadı; yönetim panelinden kontrol edilmeli.';}}
  else el('product-description').textContent=desc;
 }
 const vr=await fetch(sbUrl+'/rest/v1/product_variants?select=*&product_id=eq.'+encodeURIComponent(p.id)+'&limit=1000',{headers,cache:'no-store'}).catch(()=>null);
@@ -140,7 +142,12 @@ if(productCode==='998'){types.cutting.images=knownPhotos;types.cutting.video=kno
 el('product-name').textContent=productName;el('product-code').textContent='Kod: '+(productCode||'Belirtilmedi');
 if(el('product-description').textContent.includes('Bu çeşide ait ayrıntılı açıklama henüz eklenmedi.'))el('product-description').textContent=productName+' koleksiyonumuzdaki sardunya çeşitlerinden biridir. Fotoğraflar çeşidin genel görünümünü tanıtmak için sunulur. Gönderilecek bitkiyi seçerken Çelik, Fide veya Anaç formunu ayrı ayrı inceleyebilirsiniz. Bu çeşidin ayrıntılı bakım ve çiçeklenme bilgileri henüz eklenmemiştir.';
 el('load-state').textContent='Çelik · Fide · Anaç ürün bilgileri';
-document.title=productName+' | Sardunya Koleksiyoncusu';
+document.title=seoMeta?.title||productName+' | Sardunya Koleksiyoncusu';
+if(seoMeta?.description){
+ let meta=document.querySelector('meta[name="description"]');
+ if(!meta){meta=document.createElement('meta');meta.name='description';document.head.append(meta)}
+ meta.content=seoMeta.description;
+}
 draw();
 }
 init();

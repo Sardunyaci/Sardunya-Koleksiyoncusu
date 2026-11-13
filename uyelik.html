@@ -36,14 +36,34 @@ button:disabled{opacity:.6;cursor:progress}.secondary{color:#075d48;background:w
 <label for="login-email">E-posta</label><input id="login-email" type="email" autocomplete="email" required maxlength="254">
 <label for="login-password">Şifre</label><input id="login-password" type="password" autocomplete="current-password" required>
 <button id="login-submit" class="primary" type="submit">Giriş Yap</button>
+<button id="phone-login-open" class="secondary" type="button">📱 Telefon Numarasıyla Giriş</button>
 <button id="forgot-open" class="secondary" type="button">Şifremi Unuttum</button>
 </form>
 <form id="signup-form" class="form" hidden autocomplete="on">
 <label for="signup-email">E-posta</label><input id="signup-email" type="email" autocomplete="email" required maxlength="254">
 <label for="signup-password">Şifre (en az 12 karakter)</label><input id="signup-password" type="password" minlength="12" autocomplete="new-password" required>
 <label for="signup-repeat">Şifre Tekrar</label><input id="signup-repeat" type="password" minlength="12" autocomplete="new-password" required>
-<button id="signup-submit" class="primary" type="submit">Ücretsiz Kayıt Ol</button>
+<button id="signup-submit" class="primary" type="submit">E-posta ile Kayıt Ol</button>
+<button id="phone-signup-open" class="secondary" type="button">📱 Telefon Numarasıyla Kayıt Ol (E-posta Gerekmez)</button>
 <p class="help">Kayıttan sonra Supabase e-posta doğrulaması isteyebilir. Gelen kutunuzu kontrol edin.</p>
+</form>
+<form id="phone-form" class="form" hidden>
+<h2 id="phone-heading" style="margin:0;font:normal 25px Georgia,serif">Telefon ile Kayıt Ol</h2>
+<p class="help">E-posta gerekmiyor. Telefonunuza gelen SMS koduyla doğrulayıp üyelik oluşturabilirsiniz. Numaranızı ülke koduyla yazın: Türkiye +90, Çekya +420, Bulgaristan +359 vb.</p>
+<label for="phone-number">Cep Telefonu Numaranız</label>
+<input id="phone-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="+90 5XX XXX XX XX" required>
+<button id="phone-send" class="primary" type="submit">SMS Doğrulama Kodu Gönder</button>
+<button id="phone-back" class="secondary" type="button">Önceki Ekrana Dön</button>
+</form>
+<form id="phone-verify-form" class="form" hidden>
+<h2 style="margin:0;font:normal 25px Georgia,serif">SMS Doğrulama</h2>
+<p class="help" id="phone-confirmation">Telefonunuza gelen kodu girin.</p>
+<label for="phone-otp">SMS Doğrulama Kodu</label>
+<input id="phone-otp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" minlength="6" maxlength="8" placeholder="6 haneli kod" required>
+<button id="phone-verify" class="primary" type="submit">Doğrula ve Devam Et</button>
+<button id="phone-resend" class="secondary" type="button">Kodu Tekrar Gönder</button>
+<button id="phone-change" class="secondary" type="button">Numarayı Değiştir</button>
+<p class="tiny">SMS gelmiyorsa operatör veya SMS gönderim ayarlarını kontrol edin. Yeni SMS isteğinde kısa bekleme sınırı olabilir.</p>
 </form>
 <form id="forgot-form" class="form" hidden>
 <h2 style="margin:0;font:normal 25px Georgia,serif">Şifre Yenileme</h2><p class="help">E-posta adresinize şifre yenileme bağlantısı gönderilir.</p>
@@ -53,7 +73,7 @@ button:disabled{opacity:.6;cursor:progress}.secondary{color:#075d48;background:w
 </form>
 </div>
 <div id="account" hidden>
-<h2>Üye Hesabım</h2><p>Giriş yapılan e-posta: <strong id="member-email"></strong></p>
+<h2>Üye Hesabım</h2><p>Giriş yapılan hesap: <strong id="member-identity"></strong></p>
 <p class="help">Hesabınız açık. Ücretli dergi aboneliği henüz başlatılmadı; ödeme ve paket hakları ileride etkinleştirilecek.</p>
 <div class="actions"><a class="secondary" href="./index.html#koleksiyon">Kataloğa Git</a><button id="logout" class="primary" type="button">Çıkış Yap</button></div>
 </div>
@@ -73,13 +93,14 @@ const sb=createClient('https://qhhvhuomfqhkrvcwxwgp.supabase.co','sb_publishable
 const $=id=>document.getElementById(id);
 const authUrl=new URL('uyelik.html',location.href).href;
 const recoveryUrl=new URL('uyelik.html?mode=recovery',location.href).href;
-let mode='login',busy=false;
+let mode='login',busy=false,phonePurpose='signup',pendingPhone='',lastOtpRequestAt=0;
 function status(text,error=false){const box=$('message');box.textContent=text;box.classList.toggle('error',error);box.hidden=!text;}
-function setBusy(v){busy=v;for(const id of ['login-submit','signup-submit','forgot-submit','recovery-submit','logout'])$(id).disabled=v;}
+function setBusy(v){busy=v;for(const id of ['login-submit','signup-submit','forgot-submit','recovery-submit','logout','phone-send','phone-verify','phone-resend'])$(id).disabled=v;}
 function showMode(next){
  mode=next;
  $('auth-area').hidden=false;$('account').hidden=true;$('recovery-panel').hidden=true;
  $('login-form').hidden=next!=='login';$('signup-form').hidden=next!=='signup';$('forgot-form').hidden=next!=='forgot';
+ $('phone-form').hidden=next!=='phone';$('phone-verify-form').hidden=next!=='phone-verify';
  $('tab-login').setAttribute('aria-selected',String(next==='login'));
  $('tab-signup').setAttribute('aria-selected',String(next==='signup'));
 }
@@ -94,7 +115,7 @@ async function syncSession(){
  if(error&&!data?.user){showMode(mode);return;}
  if(data?.user){
   $('auth-area').hidden=true;$('recovery-panel').hidden=true;$('account').hidden=false;
-  $('member-email').textContent=data.user.email||'E-posta yok';return;
+  $('member-identity').textContent=data.user.email||data.user.phone||'Doğrulanmış üye';return;
  }
  showMode(mode);
 }
@@ -102,6 +123,63 @@ $('tab-login').onclick=()=>{showMode('login');location.hash='giris';status('')};
 $('tab-signup').onclick=()=>{showMode('signup');location.hash='kayit';status('')};
 $('forgot-open').onclick=()=>{showMode('forgot');status('')};
 $('forgot-back').onclick=()=>{showMode('login');status('')};
+function normalizePhone(raw){
+ const v=String(raw||'').trim().replace(/[()\s.\-]/g,'');
+ if(/^\+[1-9]\d{7,14}$/.test(v))return v;
+ if(/^05\d{9}$/.test(v))return '+90'+v.slice(1);
+ if(/^5\d{9}$/.test(v))return '+90'+v;
+ throw Error('Telefon numaranızı ülke koduyla yazın: +905XXXXXXXXX. Türkiye içi 05XXXXXXXXX formatı da kabul edilir.');
+}
+function showPhone(purpose){
+ phonePurpose=purpose;pendingPhone='';
+ $('phone-heading').textContent=purpose==='signup'?'Telefon ile Ücretsiz Kayıt Ol':'Telefon ile Giriş Yap';
+ $('phone-send').textContent=purpose==='signup'?'SMS Gönder ve Ücretsiz Kayıt Ol':'SMS ile Giriş Yap';
+ showMode('phone');status('');
+}
+$('phone-login-open').onclick=()=>showPhone('login');
+$('phone-signup-open').onclick=()=>showPhone('signup');
+$('phone-back').onclick=()=>{showMode(phonePurpose==='signup'?'signup':'login');status('')};
+$('phone-change').onclick=()=>{showMode('phone');status('')};
+async function requestOtp(phone,createUser){
+ const {error}=await sb.auth.signInWithOtp({phone,options:{shouldCreateUser:createUser,channel:'sms'}});
+ if(error)throw error;
+ lastOtpRequestAt=Date.now();
+}
+$('phone-form').onsubmit=async e=>{
+ e.preventDefault();if(busy)return;
+ let phone;try{phone=normalizePhone($('phone-number').value)}catch(error){status(error.message,true);return}
+ setBusy(true);status('SMS doğrulama kodu isteniyor…');
+ try{
+  await requestOtp(phone,phonePurpose==='signup');pendingPhone=phone;
+  $('phone-confirmation').textContent=phone+' numarasına gelen SMS kodunu girin.';
+  $('phone-otp').value='';showMode('phone-verify');
+  status('Kod gönderme isteği kabul edildi. SMS gelmediyse telefon servisinin etkin olduğundan emin olun.');
+ }catch(error){status('SMS gönderilemedi: '+error.message+'. Supabase Telefon sağlayıcısı ve SMS hizmeti etkin olmalıdır.',true)}
+ finally{setBusy(false)}
+};
+$('phone-verify-form').onsubmit=async e=>{
+ e.preventDefault();if(busy||!pendingPhone)return;
+ const token=$('phone-otp').value.trim();
+ if(!/^\d{6,8}$/.test(token)){status('SMS kodunu rakamlarla, eksiksiz girin.',true);return}
+ setBusy(true);status('SMS kodunuz doğrulanıyor…');
+ try{
+  const {data,error}=await sb.auth.verifyOtp({phone:pendingPhone,token,type:'sms'});
+  if(error)throw error;
+  if(!data?.session)throw Error('Doğrulama tamamlanmadı. Tekrar deneyin.');
+  $('phone-otp').value='';pendingPhone='';
+  status('Telefon numarası doğrulandı; üyelik oturumu açıldı.');
+  await syncSession();
+ }catch(error){status('Doğrulama başarısız: '+error.message,true)}
+ finally{setBusy(false)}
+};
+$('phone-resend').onclick=async()=>{
+ if(busy||!pendingPhone)return;
+ if(Date.now()-lastOtpRequestAt<60000){status('Yeni kod istemek için önceki SMS isteğinden sonra en az 60 saniye geçmeli.',true);return}
+ setBusy(true);status('Yeni SMS kodu isteniyor…');
+ try{await requestOtp(pendingPhone,phonePurpose==='signup');status('Yeni SMS kodu isteği alındı.')}
+ catch(error){status('SMS tekrar gönderilemedi: '+error.message,true)}
+ finally{setBusy(false)}
+};
 $('login-form').onsubmit=async e=>{
  e.preventDefault();if(busy)return;setBusy(true);status('Giriş kontrol ediliyor…');
  try{const {error}=await sb.auth.signInWithPassword({email:$('login-email').value.trim(),password:$('login-password').value});if(error)throw error;$('login-password').value='';status('Giriş başarılı.');await syncSession()}

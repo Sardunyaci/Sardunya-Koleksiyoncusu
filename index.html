@@ -55,7 +55,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const sbUrl='https://qhhvhuomfqhkrvcwxwgp.supabase.co';
 const sbKey='sb_publishable_0xXY9QFQdcpqFeBpYhthvw_aa2_Vene';
 async function fetchLimited(url,options){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7500);try{return await fetch(url,{...options,signal:controller.signal})}finally{clearTimeout(timer)}}
-const isTestProduct=p=>String(p.product_code??p.code??'').trim()==='998'||/^deneme(?:\b|\s|\d)/i.test(String(p.name||'').trim());
+const isTestProduct=p=>['998','9999'].includes(String(p.product_code??p.code??'').trim())||/^deneme(?:\b|\s|\d)/i.test(String(p.name||'').trim());
 function hasWhatsappFide(raw){
  if(typeof raw!=='string'||!raw.startsWith('@SK1@'))return false;
  try{return JSON.parse(raw.slice(5)).whatsappSeedling===true}catch{return false}

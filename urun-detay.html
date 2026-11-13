@@ -67,25 +67,25 @@ el('order-link').href='https://wa.me/'+phone+'?text='+encodeURIComponent(summary
 }
 el('quantity').addEventListener('input',updateOrder);
 function draw(){
-const item=types[selected];el('varianttitle').textContent=item.name;
+const item=types[selected];const isTestProduct=['998','9999'].includes(String(productCode).trim())||/^deneme(?:\b|\s|\d)/i.test(String(productName).trim());el('varianttitle').textContent=item.name;
 el('variantdesc').textContent=descriptions[selected];el('form-description').textContent=formDescriptions[selected]||'Bu ürün formuna özel yetiştirme, ölçü ve gönderim bilgileri henüz girilmedi.';
 const availableFormImages=item.images.filter(src=>!failedFormPhotos.has(src));
 const formHasPhoto=availableFormImages.length>0;
 const photoFormLabel=selected==='seedling'?'Fide':selected==='cutting'?'Çelik':'Anaç';
 el('variantmeasure').textContent=formHasPhoto?'Bu '+photoFormLabel+' formuna ait fotoğraflar gösteriliyor.':'Bu formun güncel fotoğrafı henüz eklenmedi. Soldaki çiçek görseli çeşidin genel görünümüdür.';
 el('variant-empty').textContent=photoFormLabel+' fotoğrafı henüz yüklenmedi';
-el('fide-photo-request').hidden=formHasPhoto||selected!=='seedling'||productCode==='998';
+el('fide-photo-request').hidden=formHasPhoto||selected!=='seedling'||isTestProduct;
 el('fide-photo-request').href='https://wa.me/'+phone+'?text='+encodeURIComponent(productName+' (Kod: '+productCode+') Fide formunun güncel, gönderilecek gerçek bitki fotoğrafını rica ediyorum.');
 
 const row=variants[selected],warn=formWarnings[selected];
 const amount=(r)=>{const x=r?.price_tl??r?.price;return x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x))&&Number(x)>0?Number(x):null};
 const quantity=(r)=>{const x=r?.stock_quantity??r?.stock;return x!==null&&x!==undefined&&x!==''&&Number.isInteger(Number(x))&&Number(x)>=0?Number(x):null};
 const p=warn?null:amount(row),q=warn?null:quantity(row);
-const inquiry=!warn&&selected==='seedling'&&whatsappSeedling&&q>0&&productCode!=='998';
+const inquiry=!warn&&selected==='seedling'&&whatsappSeedling&&q>0&&!isTestProduct;
 el('price-label').textContent=whatsappSeedling?'Fiyat: WhatsApp üzerinden öğrenin':p!==null?'Fiyat: '+p.toLocaleString('tr-TR')+' TL':'Fiyat: Henüz belirlenmedi';
 el('stock-label').textContent=warn?'Stok: Doğrulama gerekli':q!==null?'Stok: '+q+' adet':'Stok: Bilgi girilmedi';
-const ready=!whatsappSeedling&&!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&productCode!=='998';
-el('sale-label').textContent=warn?'Satış durumu: Çelişkili kayıtlar kontrol ediliyor':productCode==='998'?'Satış durumu: Test ürünü — satış kapalı':inquiry?'WhatsApp üzerinden fide sipariş talebi açık':ready?'Satış durumu: Sipariş talebine açık':'Satış durumu: Şu anda satışa kapalı';
+const ready=!whatsappSeedling&&!warn&&!!row&&row.is_available===true&&row.on_sale===true&&p!==null&&q>0&&!isTestProduct;
+el('sale-label').textContent=warn?'Satış durumu: Çelişkili kayıtlar kontrol ediliyor':isTestProduct?'Satış durumu: Test ürünü — satış kapalı':inquiry?'WhatsApp üzerinden fide sipariş talebi açık':ready?'Satış durumu: Sipariş talebine açık':'Satış durumu: Şu anda satışa kapalı';
 el('quantity').max=q>0?q:1;if(Number(el('quantity').value)>Number(el('quantity').max)||Number(el('quantity').value)<1)el('quantity').value=1;
 el('quantity').disabled=!(ready||inquiry);
 el('order-link').hidden=!(ready||inquiry);

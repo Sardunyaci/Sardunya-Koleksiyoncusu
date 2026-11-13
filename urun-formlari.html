@@ -26,7 +26,31 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 .sk-quick-info a{margin-top:12px}.sk-quick-empty{text-align:center;padding:20px;color:#597269}
 @media(max-width:750px){.sk-quick{grid-template-columns:1fr;padding:12px}.sk-quick-photo{min-height:160px;max-height:none}}
 .bulk-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:12px 0}.bulk-controls button{padding:9px 14px}.bulk-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:320px;overflow:auto;padding:8px;border:1px solid #d5e7dc;border-radius:10px;background:#f8fbf9}.bulk-item{display:block;width:100%;text-align:left;border:1px solid #ccddcf!important;background:white!important;color:#184935!important;padding:10px 12px!important;border-radius:8px!important;font-size:13px!important;line-height:1.45;white-space:normal}.bulk-item strong{display:block}.bulk-item span{font-size:12px;color:#65776b}.bulk-item.current{border:2px solid #066443!important;background:#ecf8ef!important}.bulk-item:focus-visible{outline:2px solid #046b45}.bulk-flag{font-weight:700;color:#986317}.bulk-count{font-weight:bold;color:#1b5d43}.bulk-controls label{display:flex;align-items:center;gap:6px;font-size:13px}.bulk-controls input[type=checkbox]{width:17px;height:17px;margin:0}
-</style><style id="sk-home-button-style">.sk-home-button{position:fixed;right:18px;bottom:18px;z-index:9999;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 19px;border-radius:999px;background:#0a6244;color:#fff!important;font:700 15px Arial,Helvetica,sans-serif;text-decoration:none!important;box-shadow:0 6px 24px #0004;border:2px solid #fff;line-height:1.2}.sk-home-button:hover,.sk-home-button:focus{background:#074a34;outline:2px solid #d5eadc;outline-offset:2px}@media(max-width:520px){.sk-home-button{bottom:12px;right:12px;padding:12px 15px;font-size:14px}}</style></head><body><div id="sk-home-topbar" style="display:flex;justify-content:flex-end;align-items:center;padding:10px 18px;background:#f5faf6;border-bottom:1px solid #d0e4d5;position:relative;z-index:10000"><a href="./index.html" aria-label="Ana Sayfaya Dön" style="display:inline-block;background:#0a6244;color:#fff;text-decoration:none;font:700 15px Arial,Helvetica,sans-serif;padding:12px 20px;border-radius:9px;box-shadow:0 2px 12px #0002">⌂ Ana Sayfaya Dön</a></div><a class="sk-home-button" href="./index.html" aria-label="Ana Sayfaya Dön">⌂ Ana Sayfaya Dön</a>
+
+/* Yönetim paneli telefon/tablet: rahat medya yükleme ve dokunmatik seçim */
+@media(max-width:550px){
+ main{padding:0 8px 30px;margin:12px auto}
+ .card{padding:12px;border-radius:10px;margin:10px 0}
+ h1{font-size:22px}
+ h2{font-size:24px}
+ h3{font-size:21px}
+ .tabs{gap:5px}
+ .tabs button{font-size:13px;min-height:65px;padding:8px 2px;overflow-wrap:anywhere}
+ .tabs span{font-size:11px}
+ .row button,.row a{max-width:100%;overflow-wrap:anywhere}
+ .bulk-list{grid-template-columns:minmax(0,1fr);max-height:270px}
+ .bulk-controls{align-items:stretch}
+ .bulk-controls button{padding:12px;max-width:100%}
+ .bulk-controls label{width:100%}
+ .sk-quick-info h3{font-size:23px}
+ .sk-quick-photo{min-height:145px}
+ .media{grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr))}
+ .media-item img,.media-item video{height:120px}
+ input[type=file]{font-size:14px;max-width:100%}
+ .button,button{overflow-wrap:anywhere}
+}
+
+</style><style id="sk-home-button-style">.sk-home-button{position:fixed;right:18px;bottom:18px;z-index:9999;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 19px;border-radius:999px;background:#0a6244;color:#fff!important;font:700 15px Arial,Helvetica,sans-serif;text-decoration:none!important;box-shadow:0 6px 24px #0004;border:2px solid #fff;line-height:1.2}.sk-home-button:hover,.sk-home-button:focus{background:#074a34;outline:2px solid #d5eadc;outline-offset:2px}@media(max-width:520px){.sk-home-button{bottom:12px;right:12px;padding:12px 15px;font-size:14px}}</style></head><body><div id="sk-home-topbar" style="display:flex;justify-content:flex-end;align-items:center;padding:10px 18px;background:#f5faf6;border-bottom:1px solid #d0e4d5;position:relative;z-index:10000"><a href="./index.html" aria-label="Ana Sayfaya Dön" style="display:inline-block;background:#0a6244;color:#fff;text-decoration:none;font:700 15px Arial,Helvetica,sans-serif;padding:12px 20px;border-radius:9px;box-shadow:0 2px 12px #0002">⌂ Ana Sayfaya Dön</a></div>
 <header><a href="./index.html"><strong>🌺 Sardunya Koleksiyoncusu</strong></a><nav><a href="./admin.html">← Yönetim paneli</a></nav></header>
 <main><section class="card"><h1>Ürün Formları Yönetimi</h1><p class="muted">Tüm katalog çeşitleri için Çelik, Fide ve Anaç fotoğrafı, videosu, fiyatı, stok miktarı ve açıklamasını ayrı ayrı yönet.</p><div class="notice warn">Satış otomatik açılmaz. Çift kayıtlar silinmez veya rastgele birleştirilmez. Eski fotoğraflar korunur.</div></section>
 <section class="card" id="login-box"><h2>Yönetici girişi</h2><form id="login-form"><label>E-posta</label><input id="email" type="email" required autocomplete="username"><label>Şifre</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Giriş yap</button></p></form></section>

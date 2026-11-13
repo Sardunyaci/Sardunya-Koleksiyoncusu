@@ -49,7 +49,7 @@ button:disabled{opacity:.6;cursor:progress}.secondary{color:#075d48;background:w
 </form>
 <form id="phone-form" class="form" hidden>
 <h2 id="phone-heading" style="margin:0;font:normal 25px Georgia,serif">Telefon ile Kayıt Ol</h2>
-<p class="help">E-posta gerekmiyor. Numaranızı ülke koduyla yazın: Türkiye +90, Çekya +420, Bulgaristan +359 vb. SMS koduyla doğrulama için sitenin SMS hizmeti etkin olmalıdır.</p>
+<p class="help">E-posta gerekmiyor. Numaranızı ülke koduyla yazın: Türkiye +90, Çekya +420, Bulgaristan +359 vb. Numaranızla hesap yoksa SMS doğrulamasından sonra ücretsiz hesap oluşturulur. SMS gönderimi için Supabase Phone ve SMS servisi etkin olmalıdır.</p>
 <label for="phone-number">Cep Telefonu Numaranız</label>
 <input id="phone-number" type="tel" inputmode="tel" autocomplete="tel" placeholder="+90 5XX XXX XX XX" required>
 <button id="phone-send" class="primary" type="submit">SMS Doğrulama Kodu Gönder</button>
@@ -132,29 +132,48 @@ function normalizePhone(raw){
 }
 function showPhone(purpose){
  phonePurpose=purpose;pendingPhone='';
- $('phone-heading').textContent=purpose==='signup'?'Telefon ile Ücretsiz Kayıt Ol':'Telefon ile Giriş Yap';
- $('phone-send').textContent=purpose==='signup'?'SMS Gönder ve Ücretsiz Kayıt Ol':'SMS ile Giriş Yap';
+ $('phone-heading').textContent=purpose==='signup'?'Telefon ile Ücretsiz Kayıt Ol':'Telefon ile Kayıt Ol / Giriş Yap';
+ $('phone-send').textContent=purpose==='signup'?'SMS Gönder ve Ücretsiz Kayıt Ol':'SMS ile Devam Et';
  showMode('phone');status('');
 }
 $('phone-login-open').onclick=()=>showPhone('login');
 $('phone-signup-open').onclick=()=>showPhone('signup');
 $('phone-back').onclick=()=>{showMode(phonePurpose==='signup'?'signup':'login');status('')};
 $('phone-change').onclick=()=>{showMode('phone');status('')};
-async function requestOtp(phone,createUser){
- const {error}=await sb.auth.signInWithOtp({phone,options:{shouldCreateUser:createUser,channel:'sms'}});
+async function requestOtp(phone){
+ // İlk kez gelen bir kullanıcı Giriş sekmesini seçtiğinde de SMS koduyla kayıt olabilir.
+ // shouldCreateUser:false ayarı, bu kullanıcılar için "Signups not allowed for otp" hatası üretir.
+ const {error}=await sb.auth.signInWithOtp({phone,options:{shouldCreateUser:true,channel:'sms'}});
  if(error)throw error;
  lastOtpRequestAt=Date.now();
+}
+function readableSmsError(error){
+ const code=String(error?.code||'').toLowerCase();
+ const msg=String(error?.message||'');
+ if(code==='otp_disabled'||/signups not allowed for otp/i.test(msg)){
+  return 'Telefonla kayıt / SMS OTP isteği Supabase tarafından engellendi. Authentication ayarlarında yeni kullanıcı kaydı ve Phone sağlayıcısının açık olduğundan, ayrıca SMS sağlayıcısının yapılandırıldığından emin olun.';
+ }
+ if(code==='signup_disabled'||/signups? (?:are |is )?disabled|signups not allowed for this instance/i.test(msg)){
+  return 'Supabase projesinde yeni kullanıcı kaydı kapalı. Authentication ayarlarından yeni kullanıcı kaydını açın.';
+ }
+ if(code==='phone_provider_disabled'||/phone provider is disabled/i.test(msg)){
+  return 'Supabase Phone sağlayıcısı kapalı. Authentication > Providers > Phone alanından etkinleştirin ve SMS hizmetini bağlayın.';
+ }
+ if(/sms|twilio|messagebird|vonage|provider/i.test(msg)){
+  return 'SMS hizmeti isteği reddetti: '+msg+'. SMS sağlayıcısı ayarlarını ve gönderim yetkilerini kontrol edin.';
+ }
+ return 'SMS isteği başarısız: '+msg;
 }
 $('phone-form').onsubmit=async e=>{
  e.preventDefault();if(busy)return;
  let phone;try{phone=normalizePhone($('phone-number').value)}catch(error){status(error.message,true);return}
  setBusy(true);status('SMS doğrulama kodu isteniyor…');
  try{
-  await requestOtp(phone,phonePurpose==='signup');pendingPhone=phone;
+  await requestOtp(phone);pendingPhone=phone;
   $('phone-confirmation').textContent=phone+' numarasına gelen SMS kodunu girin.';
   $('phone-otp').value='';showMode('phone-verify');
   status('Kod gönderme isteği kabul edildi. SMS gelmediyse telefon servisinin etkin olduğundan emin olun.');
- }catch(error){status('SMS gönderilemedi: '+error.message+'. Supabase Telefon sağlayıcısı ve SMS hizmeti etkin olmalıdır.',true)}
+ }catch(error){status(readableSmsError(error),true)}
  finally{setBusy(false)}
 };
 $('phone-verify-form').onsubmit=async e=>{
@@ -176,8 +195,8 @@ $('phone-resend').onclick=async()=>{
  if(busy||!pendingPhone)return;
  if(Date.now()-lastOtpRequestAt<60000){status('Yeni kod istemek için önceki SMS isteğinden sonra en az 60 saniye geçmeli.',true);return}
  setBusy(true);status('Yeni SMS kodu isteniyor…');
- try{await requestOtp(pendingPhone,phonePurpose==='signup');status('Yeni SMS kodu isteği alındı.')}
- catch(error){status('SMS tekrar gönderilemedi: '+error.message,true)}
+ try{await requestOtp(pendingPhone);status('Yeni SMS kodu isteği alındı.')}
+ catch(error){status(readableSmsError(error),true)}
  finally{setBusy(false)}
 };
 $('login-form').onsubmit=async e=>{

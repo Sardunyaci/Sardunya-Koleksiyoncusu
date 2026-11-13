@@ -32,7 +32,7 @@ button.secondary,.button.secondary{background:#e7f0ea;color:#124c32;border:1px s
 <section class="card" id="login-box"><h2>Yönetici girişi</h2><form id="login-form"><label>E-posta</label><input id="email" type="email" required autocomplete="username"><label>Şifre</label><input id="password" type="password" required autocomplete="current-password"><p><button type="submit">Giriş yap</button></p></form></section>
 <div id="panel" class="hidden">
 <section class="card"><h2>Ürün Seçimi</h2><div class="grid"><div><label>Ürün ara</label><input id="filter" placeholder="Çeşit adı veya kod"></div><div><label>Ürün</label><select id="product"><option value="">Ürün seçiniz…</option></select></div></div>
-<div class="bulk-controls"><button id="bulk-prev" type="button" class="secondary">← Önceki çeşit</button><button id="bulk-next" type="button" class="secondary">Sonraki çeşit →</button><span id="bulk-position" class="bulk-count">Ürün seçilmedi</span><label><input id="bulk-missing" type="checkbox"> Yalnızca genel açıklaması eksik olanlar</label><label><input id="bulk-fide-missing" type="checkbox"> Fide fotoğrafı eksik olanlar</label></div><p id="bulk-summary" class="muted small" aria-live="polite">Ürünler yükleniyor…</p><div id="bulk-list" class="bulk-list" aria-label="Hızlı ürün listesi"></div>
+<div class="bulk-controls"><button id="bulk-prev" type="button" class="secondary">← Önceki çeşit</button><button id="bulk-next" type="button" class="secondary">Sonraki çeşit →</button><span id="bulk-position" class="bulk-count">Ürün seçilmedi</span><button id="next-fide-photo" type="button" class="secondary">📷 Sıradaki fotoğrafsız Fide</button><label><input id="bulk-missing" type="checkbox"> Yalnızca genel açıklaması eksik olanlar</label><label><input id="bulk-fide-missing" type="checkbox"> Fide fotoğrafı eksik olanlar</label></div><p id="bulk-summary" class="muted small" aria-live="polite">Ürünler yükleniyor…</p><div id="bulk-list" class="bulk-list" aria-label="Hızlı ürün listesi"></div>
 <div class="sk-quick hidden" id="quicklook" aria-live="polite">
 <div class="sk-quick-photo"><img id="quick-photo" class="hidden" alt="Seçilen çeşidin fotoğrafı"><span class="sk-quick-empty" id="quick-empty">Fotoğraf aranıyor…</span></div>
 <div class="sk-quick-info"><h3 id="quick-name">Ürün</h3><p id="quick-code" class="muted"></p><p id="quick-status">Fotoğraf aranıyor…</p>
@@ -139,6 +139,16 @@ function selectBulkProduct(id){
  filterProducts();
  $('product').value=id;
  chooseProduct().catch(e=>message('Ürün seçimi hatası: '+e.message,true));
+}
+function nextFidePhoto(){
+ const candidates=list.filter(p=>String(p.product_code||'')!=='998'&&!/^deneme(?:\\b|\\s|\\d)/i.test(String(p.name||''))&&missingFidePhoto(p));
+ if(!candidates.length){message('Fotoğrafı eksik Fide kalmadı.');return}
+ const current=candidates.findIndex(p=>p.id===selected?.id);
+ const target=candidates[(current+1)%candidates.length];
+ $('filter').value='';$('bulk-missing').checked=false;$('bulk-fide-missing').checked=true;
+ filterProducts();$('product').value=target.id;
+ selectedType='seedling';
+ chooseProduct().then(()=>{renderType();$('photos').scrollIntoView({behavior:'smooth',block:'center'});message(target.product_code+' · '+target.name+' seçildi. Gerçek Fide fotoğrafını yükleyebilirsin.');}).catch(e=>message('Fide açılamadı: '+e.message,true));
 }
 function stepBulk(delta){
  const arr=bulkCandidates();
@@ -375,6 +385,7 @@ $('bulk-next').onclick=()=>stepBulk(1);
 $('bulk-prev').onclick=()=>stepBulk(-1);
 $('bulk-missing').onchange=renderBulkList;
 $('bulk-fide-missing').onchange=renderBulkList;
+$('next-fide-photo').onclick=nextFidePhoto;
 $('filter').addEventListener('input',filterProducts);
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{selectedType=b.dataset.type;renderType()}));
 $('save-general').onclick=async()=>{

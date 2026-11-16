@@ -6,6 +6,7 @@
 .sk-order-box{position:relative;display:grid;grid-template-columns:minmax(270px,.75fr) minmax(0,1.25fr);gap:20px;width:min(1120px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;border-radius:20px;padding:20px;background:#fbfaf7;color:#183a2c;box-shadow:0 24px 90px #001d10a8;font:16px/1.55 Arial,Helvetica,sans-serif}
 .sk-order-photo{background:#fff;border:1px solid #e2e8df;border-radius:15px;padding:17px;min-width:0;align-self:start}
 .sk-order-photo img{display:block;aspect-ratio:1/1;object-fit:cover;width:100%;border-radius:13px;background:#dbe8db}
+.sk-order-photo img[hidden],.sk-order-photo .sk-order-fallback[hidden]{display:none!important}
 .sk-order-photo .sk-order-fallback{aspect-ratio:1/1;display:grid;place-items:center;color:#436d55;background:#edf4ed;border-radius:13px;text-align:center;padding:20px}
 .sk-order-photo h2{font:normal clamp(26px,3vw,36px) Georgia,serif;margin:15px 0 8px;overflow-wrap:anywhere}
 .sk-order-note{font-size:13px;color:#607b69;margin:8px 0 0;line-height:1.6}

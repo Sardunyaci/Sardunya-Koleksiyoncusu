@@ -107,7 +107,7 @@ function setPhase(p){
   mark.dataset.active=String(i===p);mark.dataset.done=String(i<p);
  }
  const box=$('sk-order-backdrop').querySelector('.sk-order-box');
- box.scrollTop=0;
+ box.scrollTop=0;$('sk-order-backdrop').scrollTop=0;
 }
 function refreshProduct(){
  code=$('sk-order-code').value.trim();

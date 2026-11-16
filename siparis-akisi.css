@@ -1,0 +1,52 @@
+
+/* Sardunya tek ekranda sipariş: ürün -> adres -> ödeme bilgisi */
+.sk-order-backdrop{position:fixed;inset:0;z-index:2147483645;background:rgba(9,28,20,.78);display:grid;place-items:center;padding:18px;overflow-y:auto}
+.sk-order-backdrop[hidden]{display:none!important}
+.sk-order-box,.sk-order-box *{box-sizing:border-box}
+.sk-order-box{position:relative;display:grid;grid-template-columns:minmax(270px,.75fr) minmax(0,1.25fr);gap:20px;width:min(1120px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;border-radius:20px;padding:20px;background:#fbfaf7;color:#183a2c;box-shadow:0 24px 90px #001d10a8;font:16px/1.55 Arial,Helvetica,sans-serif}
+.sk-order-photo{background:#fff;border:1px solid #e2e8df;border-radius:15px;padding:17px;min-width:0;align-self:start}
+.sk-order-photo img{display:block;aspect-ratio:1/1;object-fit:cover;width:100%;border-radius:13px;background:#dbe8db}
+.sk-order-photo .sk-order-fallback{aspect-ratio:1/1;display:grid;place-items:center;color:#436d55;background:#edf4ed;border-radius:13px;text-align:center;padding:20px}
+.sk-order-photo h2{font:normal clamp(26px,3vw,36px) Georgia,serif;margin:15px 0 8px;overflow-wrap:anywhere}
+.sk-order-note{font-size:13px;color:#607b69;margin:8px 0 0;line-height:1.6}
+.sk-order-panel{background:white;border:1px solid #e0e8df;border-radius:16px;padding:26px;min-width:0}
+.sk-order-panel h2{font:normal clamp(26px,3vw,35px) Georgia,serif;margin:0;color:#173a2b}
+.sk-order-panel>p{margin:5px 0 20px;color:#53725d}
+.sk-order-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:10px 0 22px}
+.sk-order-steps span{display:block;text-align:center;background:#eaf0ea;padding:12px 4px;border-radius:9px;font-weight:700;font-size:14px;min-width:0}
+.sk-order-steps span[data-active="true"]{background:#0b5f3a;color:white}
+.sk-order-steps span[data-done="true"]{background:#e0f2e2;color:#185a36}
+.sk-order-step[hidden]{display:none!important}
+.sk-order-step h3{font:normal 24px Georgia,serif;margin:0 0 8px}
+.sk-order-label{font-weight:700;font-size:14px;display:block;margin:16px 0 7px}
+.sk-order-panel input,.sk-order-panel textarea{width:100%;padding:13px 14px;border:1px solid #b8cdbb;border-radius:9px;background:#fff;font:inherit;color:#183a2c}
+.sk-order-panel textarea{min-height:124px;resize:vertical;line-height:1.6}
+.sk-order-panel input:focus-visible,.sk-order-panel textarea:focus-visible{outline:3px solid #8bbb93;outline-offset:2px}
+.sk-order-chip{display:inline-block;background:#eaf3e8;border-radius:15px;padding:6px 12px;font-size:13px;font-weight:700;color:#276041}
+.sk-order-card{background:#f1f6ec;border-radius:11px;padding:14px;margin:17px 0;font-size:14px;line-height:1.75;overflow-wrap:anywhere}
+.sk-order-summary{white-space:pre-wrap}
+.sk-order-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:21px}
+.sk-order-actions button,.sk-order-actions a{min-height:47px;flex:1 1 150px;border-radius:9px;text-align:center;display:inline-flex;align-items:center;justify-content:center;padding:12px 15px;font:700 15px Arial,Helvetica,sans-serif;cursor:pointer;text-decoration:none}
+.sk-order-primary{border:1px solid #085d3b;background:#085d3b;color:#fff!important}
+.sk-order-secondary{border:1px solid #a8c3b1;background:#fff;color:#155638!important}
+.sk-order-primary:disabled{opacity:.55;cursor:not-allowed}
+.sk-order-close{position:absolute;right:12px;top:12px;z-index:2;border:1px solid #bad0c0;border-radius:50%;background:white;color:#1d4f36;font:bold 24px Arial;width:39px;height:39px;cursor:pointer}
+.sk-order-warning{color:#a03425;background:#fff0ed;padding:10px 12px;border-radius:7px;font-size:13px}
+.sk-order-warning[hidden]{display:none!important}
+.sk-order-muted{color:#587361;font-size:13px;line-height:1.6}
+.sk-order-paybox{padding:12px;border:1px dashed #b6cdbb;border-radius:9px;background:#f7faf7;color:#547360;margin:14px 0}
+.sk-order-paybox label{display:block;margin:8px 0;font-size:14px}
+.sk-order-paybox input{width:auto;margin-right:9px}
+.sk-order-paybox label:has(input:disabled){opacity:.75}
+@media(max-width:740px){
+ .sk-order-backdrop{padding:5px;align-items:start}
+ .sk-order-box{grid-template-columns:minmax(0,1fr);max-height:calc(100dvh - 10px);gap:8px;padding:10px;border-radius:12px}
+ .sk-order-photo{display:grid;grid-template-columns:100px minmax(0,1fr);align-items:center;gap:12px;padding:10px}
+ .sk-order-photo img,.sk-order-photo .sk-order-fallback{width:100px;height:100px;aspect-ratio:1/1}
+ .sk-order-photo h2{font-size:21px;margin:0 0 4px}
+ .sk-order-photo .sk-order-note{font-size:11px}
+ .sk-order-panel{padding:15px}
+ .sk-order-steps span{font-size:12px;padding:10px 3px}
+ .sk-order-panel h2{font-size:25px}
+ .sk-order-close{right:6px;top:6px}
+}
